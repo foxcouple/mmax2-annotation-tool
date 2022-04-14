@@ -25,4 +25,10 @@ public class AlphabeticMarkableComparator implements java.util.Comparator
     
     public int compare(Object _markable1, Object _markable2)
     {
-        Mar
+        Markable markable1 = (Markable) _markable1;
+        Markable markable2 = (Markable) _markable2;
+
+        String string1 = markable1.toString();
+        string1 = string1.substring(1,string1.length()-1);
+        
+        S
