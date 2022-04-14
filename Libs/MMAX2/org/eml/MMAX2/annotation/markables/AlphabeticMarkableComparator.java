@@ -31,4 +31,10 @@ public class AlphabeticMarkableComparator implements java.util.Comparator
         String string1 = markable1.toString();
         string1 = string1.substring(1,string1.length()-1);
         
-        S
+        String string2 = markable2.toString();
+        string2 = string2.substring(1,string2.length()-1);
+        
+        return string1.compareToIgnoreCase(string2);
+    }    
+}
+
