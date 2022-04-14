@@ -17,4 +17,12 @@ package org.eml.MMAX2.annotation.markables;
 
 public class AlphabeticMarkableComparator implements java.util.Comparator
 {
-    /** Creates new A
+    /** Creates new AlphabeticMarkableComparator. */
+    public AlphabeticMarkableComparator() 
+    {
+        super();
+    }
+    
+    public int compare(Object _markable1, Object _markable2)
+    {
+        Mar
