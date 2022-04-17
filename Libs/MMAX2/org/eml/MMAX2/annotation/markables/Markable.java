@@ -232,3 +232,261 @@ public final class Markable implements java.io.Serializable, MarkableAPI
 
 /*    
     public final void addDiscourseElementsBulk(ArrayList addeesIDs)
+    {
+        // Note: addessIDs may contains duplicates
+        // Comparing DE objects for identity does not work as they are never identical
+        
+        ArrayList DEsToBeAdded = new ArrayList();
+        // Get list of MMAX2DiscourseElement objects to be added
+        for (int z=0;z<addeesIDs.size();z++)
+        {
+            DEsToBeAdded.add(level.getCurrentDiscourse().getDiscourseElementByID((String)addeesIDs.get(z)));
+        }
+        
+        
+        // Get array of DEs that markable already consists of
+        ArrayList DEsAlreadyThere = new ArrayList(java.util.Arrays.asList(level.getCurrentDiscourse().getDiscourseElements(this)));
+        // Merge both, ignoring duplicates for now
+        DEsAlreadyThere.addAll(DEsToBeAdded);
+/*        
+        for (int b=0;b<DEsToBeAdded.size();b++)
+        {
+            MMAX2DiscourseElement de = (MMAX2DiscourseElement) DEsToBeAdded.get(b);
+                DEsAlreadyThere.add(de);
+        }
+*/
+/*
+        MMAX2DiscourseElement[] toSort = (MMAX2DiscourseElement[]) DEsAlreadyThere.toArray(new MMAX2DiscourseElement[0]);;
+        java.util.Arrays.sort(toSort,new DiscourseOrderDiscourseElementComparator());
+        
+        DEsAlreadyThere = new ArrayList(java.util.Arrays.asList(toSort));
+        
+        // Remove any duplicates 
+        MarkableHelper.removeDuplicateDiscoursePositions(DEsAlreadyThere);
+        
+        // Now, DEsAlreadyThere contains the new span
+        update(MarkableHelper.toFragments(DEsAlreadyThere));               
+        level.setIsDirty(true,false);
+        return;
+    }
+  */  
+    public final boolean addDiscourseElements(String[] addees)
+    {
+        ArrayList<MMAX2DiscourseElement> addeesAsList = new ArrayList<MMAX2DiscourseElement>();
+        // Get list of MMAX2DiscourseElement objects to be added
+        for (int z=0;z<addees.length;z++)
+        {
+            addeesAsList.add(level.getCurrentDiscourse().getDiscourseElementByID(addees[z]));
+        }
+        
+        // Find discPos of first and last DE to add
+        int firstDiscPosToAdd = ((MMAX2DiscourseElement)addeesAsList.get(0)).getDiscoursePosition();
+        int lastDiscPosToAdd = ((MMAX2DiscourseElement)addeesAsList.get(addeesAsList.size()-1)).getDiscoursePosition();
+        
+        // Get array of DEs that markable already consists of
+        MMAX2DiscourseElement[] sequence = level.getCurrentDiscourse().getDiscourseElements(this);
+        
+        // Get list of DEs already in Markable
+        ArrayList<MMAX2DiscourseElement> DEsAsList = new ArrayList<MMAX2DiscourseElement>(java.util.Arrays.asList(sequence));        
+        // Get range of markable
+        int firstDiscPosInMarkable = ((MMAX2DiscourseElement)DEsAsList.get(0)).getDiscoursePosition();
+        int lastDiscPosInMarkable = ((MMAX2DiscourseElement)DEsAsList.get(DEsAsList.size()-1)).getDiscoursePosition();
+        
+        if (firstDiscPosToAdd < firstDiscPosInMarkable)
+        {
+        	// The sequence of elements to be added starts before current markable
+            // addAll is safe here, because duplicates will be removed later
+            DEsAsList.addAll(0, addeesAsList);
+            MarkableHelper.removeDuplicateDiscoursePositions(DEsAsList);
+        }
+        else if (lastDiscPosInMarkable < firstDiscPosToAdd )
+        {
+            // The sequence of elements to be added starts after current markable ends
+            // addAll is safe because duplicates are not possible
+            DEsAsList.addAll(addeesAsList);            
+            // better safe than sorry
+            MarkableHelper.removeDuplicateDiscoursePositions(DEsAsList);
+        }
+        else
+        {
+            // We add somewhere in between
+            MMAX2DiscourseElement currentDE = null;
+            // Now all we have to do is find the insertion point in DEsAsList
+            // Iterate over it
+            for (int z=0;z<DEsAsList.size();z++)
+            {
+                // Get currentDE
+                currentDE = (MMAX2DiscourseElement)DEsAsList.get(z);
+                if (currentDE.getDiscoursePosition() > firstDiscPosToAdd)
+                {
+                    // Add entire list here, duplicates will be removed later
+                    DEsAsList.addAll(z, addeesAsList);
+                    break;
+                }
+            }
+            MarkableHelper.removeDuplicateDiscoursePositions(DEsAsList);
+        }
+                
+        update(MarkableHelper.toFragments(DEsAsList));               
+
+               
+        level.setIsDirty(true,false);
+        return true;
+    }
+    
+    public final void deleteMe()
+    {
+        level.deleteMarkable(this);
+    }
+    
+    public final SimpleAttributeSet getAttributedependentStyle()
+    {
+        return level.getRenderer().getAttributesForMarkable(this);
+    }
+    
+    public final void destroyDependentComponents()
+    {
+        attributes = null;
+        discourseElementStartPositions = null;
+        displayStartPositions = null;
+        displayEndPositions = null;
+        fragments = null;
+        leftHandlePositions = null;
+        rightHandlePositions = null;
+        nodeRepresentation = null;
+        string = null;
+        level = null;
+        
+    }
+
+    public final int getLeftmostDiscoursePosition()
+    {
+        return level.getCurrentDiscourse().getDiscoursePositionFromDiscourseElementID(fragments[0][0]);
+    }
+
+    public final int getRightmostDiscoursePosition()
+    {
+        String[] finalFrag = fragments[fragments.length-1];
+        return level.getCurrentDiscourse().getDiscoursePositionFromDiscourseElementID(finalFrag[finalFrag.length-1]);
+    }
+    
+    
+    public final int getLeftmostDisplayPosition()
+    {
+        return leftmostDisplayPosition;
+    }
+
+    public final int getRightmostDisplayPosition()
+    {
+        return rightmostDisplayPosition;
+    }
+    
+    public final int[] getDisplayStartPositions()
+    {
+        return displayStartPositions;
+    }
+
+    public final int[] getDisplayEndPositions()
+    {
+        return displayEndPositions;
+    }
+    
+    public final int[] getDiscourseElementStartPositions()
+    {
+        return discourseElementStartPositions;
+    }
+    
+
+    protected final void resetHandles()
+    {
+        leftHandlePositions = null;
+        leftHandlePositions = new int[0];
+        rightHandlePositions = null;
+        rightHandlePositions = new int[0];        
+    }
+    
+    public final void renderMe(int mode)
+    {
+        if (isInSearchResult && mode == MMAX2Constants.RENDER_UNSELECTED)
+        {
+            level.getRenderer().render(this, MMAX2Constants.RENDER_IN_SEARCHRESULT);
+        }
+        else
+        {
+            level.getRenderer().render(this, mode);
+        }
+    }
+    
+    public final boolean isDiscontinuous()
+    {
+        return discontinuous;
+    }
+        
+    public final int getSize()
+    {
+        return this.size;
+    }
+    
+    public final void addLeftHandlePosition(int pos)
+    {        
+        if (leftHandlePositions.length == 0)
+        {
+            leftHandlePositions = null;
+            leftHandlePositions = new int[singleFragments];            
+            level.setHasHandles(true);            
+        }
+        
+        /* Search array of leftHandlePositions */
+        //for (int p=0;p<size;p++)
+        for (int p=0;p<singleFragments;p++)
+        {
+            if (leftHandlePositions[p]==0)
+            {
+                leftHandlePositions[p]=pos;
+                break;
+            }
+        }
+    }
+    
+    public final int[] getLeftHandlePositions()
+    {
+        return leftHandlePositions;
+    }
+
+    public final void addRightHandlePosition(int pos)
+    {
+        if (rightHandlePositions.length == 0)
+        {
+            rightHandlePositions = null;
+            rightHandlePositions = new int[singleFragments];            
+        }        
+        /** Search array of rightHandlePositions */
+        for (int p=0;p<singleFragments;p++)
+        {
+            if (rightHandlePositions[p]==0)
+            {
+                rightHandlePositions[p]=pos;
+                break;
+            }
+        }
+    }
+
+    public final int[] getRightHandlePositions()
+    {
+        return rightHandlePositions;
+    }
+    
+    public final Node getNodeRepresentation()
+    {
+        return this.nodeRepresentation; 
+    }
+    
+    final public String getID()
+    {
+        return this.ID;
+    }
+    
+    public final String getMarkableLevelName()
+    {
+        return this.level.getMarkableLevelName();
+    }
