@@ -490,3 +490,229 @@ public final class Markable implements java.io.Serializable, MarkableAPI
     {
         return this.level.getMarkableLevelName();
     }
+    
+    public final MarkableLevel getMarkableLevel()
+    {
+        return level;
+    }
+
+    /** This does return attributes only, values are changed back immediately afterwards!! (Used for creation of ActionSelector) 
+        Important: This does NOT make sure to set the attribute window to prior display state!! */
+    public final MMAX2Attribute[] getValidatedAttributes()
+    {
+        MMAX2Attribute[] result = null;
+        // Store old dirty status, because validation may change that
+        boolean oldStat = false;
+        if (level.getCurrentDiscourse().getMMAX2()!= null)
+        {
+            oldStat = level.getCurrentDiscourse().getMMAX2().getIsAnnotationModified();
+        }
+        // Get attributes for this markable, validated by attribute window
+        result = level.getCurrentAnnotationScheme().getAttributes(this);
+        // Restore old attribute window status (if one existed)
+        
+        // If the anno was not originally dirty, reset it to clean
+        if (level.getCurrentDiscourse().getMMAX2()!= null)
+        {
+            if (!oldStat) level.getCurrentDiscourse().getMMAX2().setIsAnnotationModified(false);
+        }
+        return result;
+    }
+    
+    
+    /** This method returns true if displayPosition is covered by the Markable, false otherwise. */
+    public final boolean coversDisplayPosition(int displayPosition)
+    {
+        boolean result = false;
+        // Iterate over all fragments of this Markable 
+        for (int z=0;z<singleFragments;z++)
+        {
+            if (displayPosition == displayStartPositions[z] || displayPosition == displayEndPositions[z])
+            {
+                // displayPosition is directly on either displayStart-or EndPosition
+                result = true;
+                break;
+            }
+            if (displayPosition > displayStartPositions[z] && displayPosition < displayEndPositions[z])
+            {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public final String[][] getFragments()
+    {
+        return fragments;
+    }
+
+    public final boolean getIsInSearchResult()
+    {
+        return this.isInSearchResult;
+    }
+    public final void setIsInSearchResult(boolean status)
+    {
+        isInSearchResult = status;
+    }
+    public String toTrimmedString(int maxLen)
+    {
+        String complete = toString(); // This includes fragment boundaries
+        String copyofmarkabletext=complete;
+        if (complete.length() > maxLen)
+        {
+            /* Trim current markabletext */
+            /* First part */
+            complete=complete.substring(0,(maxLen-5)/2);
+            /* Omission symbols */
+            complete=complete+" [...] ";
+            /* Last part */
+            complete=complete+(copyofmarkabletext.substring(copyofmarkabletext.length()-((maxLen-5)/2)+1,copyofmarkabletext.length()));
+        }
+        complete.trim();        
+        return complete;
+    }
+
+        
+    public final Point getPoint()
+    {
+    	// Point is the top left coord of the markable. If no handles are active, we use the display start position, else the
+    	// left handle position
+        Point resultPoint = null;
+        Rectangle2D tempRect = null;
+        try
+        {
+            if (leftHandlePositions.length==0)
+            {
+            	// Use display pos if no handles are available
+            	// This is wrong: HandlePositions are currently initialized as a one-elem-array,
+            	// and so never have length 0
+            	// Changed: handlepositions are now inited with len 0 array
+            	tempRect = level.getCurrentDiscourse().getMMAX2().getCurrentTextPane().modelToView2D(displayStartPositions[0]);
+            }
+            else
+            {
+            	// else use left handle pos
+                tempRect = level.getCurrentDiscourse().getMMAX2().getCurrentTextPane().modelToView2D(leftHandlePositions[0]);
+            }
+        }
+        catch (javax.swing.text.BadLocationException ex)
+        {
+            System.out.println("Error with display position determination for Markable "+getID());
+        }
+          
+        resultPoint = new Point((int)tempRect.getX(),(int)tempRect.getY());        
+        return resultPoint;
+    }
+    
+    public final Point[] getRectangle()
+    {
+        Graphics2D graphics = (Graphics2D) this.getMarkableLevel().getCurrentDiscourse().getMMAX2().getCurrentTextPane().getGraphics();         
+        FontMetrics m = graphics.getFontMetrics();
+        int brackWidth = m.charWidth('[');
+        int hOffSet=(int)(brackWidth/2);
+        int lineHeight = m.getHeight();
+        int vOffSet = (int)this.level.getCurrentDiscourse().getMMAX2().currentDisplayFontSize/5;
+                
+    	// Rectangle describes the four corners of a markable
+    	// Point is the top left coord of the markable. If no handles are active, we use the display start position, else the left handle position
+    	Point[] res = new Point[4];
+        Rectangle2D tempRect = null;
+        
+        try
+        {
+            if (leftHandlePositions.length==0)
+            {
+            	// x,y of top left, width = 0, height depends on line height
+            	tempRect = level.getCurrentDiscourse().getMMAX2().getCurrentTextPane().modelToView2D(displayStartPositions[0]);
+            }
+            else
+            {
+            	// else use left handle pos
+                tempRect = level.getCurrentDiscourse().getMMAX2().getCurrentTextPane().modelToView2D(leftHandlePositions[0]);
+            }
+        	//topLeft
+        	res[0] = new Point((int)tempRect.getX()+hOffSet, (int) tempRect.getY() + vOffSet);
+        	//bottomLeft 
+        	res[3] = new Point((int)tempRect.getX()+hOffSet, (int) tempRect.getY() + lineHeight - vOffSet);
+
+            if (rightHandlePositions.length==0)
+            {
+            	// x,y of top right, width = 0, height depends on line height
+            	tempRect = level.getCurrentDiscourse().getMMAX2().getCurrentTextPane().modelToView2D(displayEndPositions[displayEndPositions.length-1]);
+            }
+            else
+            {
+            	// else use right handle pos
+                tempRect = level.getCurrentDiscourse().getMMAX2().getCurrentTextPane().modelToView2D(rightHandlePositions[rightHandlePositions.length-1]);
+            }
+            //topRight 
+        	res[1] = new Point((int)tempRect.getX()+hOffSet, (int) tempRect.getY() + vOffSet);
+        	// bottomRight 
+        	res[2] = new Point((int)tempRect.getX()+hOffSet, (int) tempRect.getY() + lineHeight - vOffSet);        	        	
+        }
+        catch (javax.swing.text.BadLocationException ex)
+        {
+            System.out.println("Error with display position determination for Markable "+getID());
+        }        
+        return res;
+    }
+
+    
+    /** This method returns all of this Markable's attributes (except ID and SPAN, which are system-attributes) as a HashMap. */
+    public final HashMap getAttributes()
+    {
+        return this.attributes;
+    }
+    
+    public final void setAttributes(HashMap newAttributes)
+    {
+        this.attributes = null;
+        this.attributes = newAttributes;
+        String current = "";
+        Iterator allKeys = newAttributes.keySet().iterator();
+        while(allKeys.hasNext())
+        {
+            current = (String) allKeys.next();          
+            ((Element)nodeRepresentation).setAttribute(current,(String)newAttributes.get(current));
+        }             
+        ((Element)nodeRepresentation).setAttribute("mmax_level",this.level.getMarkableLevelName());
+        // Removed on March 19, 2010: This caused all markable selections to make the annotation dirty
+        // level.setIsDirty(true,false);
+        // Dirtying the respective level will be handled by the calling method
+    }
+    
+    
+    public final void selectMe()
+    {
+        MMAX2 localMMAX2ref = getMarkableLevel().getCurrentDiscourse().getMMAX2();
+        if (localMMAX2ref.getCurrentDiscourse().getHasGUI())
+        {
+            getMarkableLevel().getCurrentDiscourse().getCurrentMarkableChart().markableLeftClicked(this);
+            localMMAX2ref.setIgnoreCaretUpdate(true);
+            try
+            {
+                localMMAX2ref.getCurrentTextPane().scrollRectToVisible(localMMAX2ref.getCurrentTextPane().modelToView(this.getLeftmostDisplayPosition()));
+            }
+            catch (javax.swing.text.BadLocationException ex)
+            {
+                System.err.println("Cannot render modelToView()");
+            }   
+            localMMAX2ref.setIgnoreCaretUpdate(false);
+            localMMAX2ref.getCurrentTextPane().startAutoRefresh();                                
+        }
+        else
+        {
+            System.err.println("No selectMe() in non-GUI mode!");
+        }
+    }
+    
+    
+    /** This method returns the value this Markable has for attribute attributeName, or null if attribute is not defined for
+        Markable. attributeName is set to lowercase before its value is retrieved, and value is set to lower case before 
+        it is returned. 
+        1.15: Casing is maintained now!*/
+    public final String getAttributeValue(String attributeName)
+    {
+        String result = null;
+        //attributeName = attributeName.toLowerCase();
