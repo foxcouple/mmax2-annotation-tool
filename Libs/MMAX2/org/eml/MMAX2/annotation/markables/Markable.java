@@ -716,3 +716,65 @@ public final class Markable implements java.io.Serializable, MarkableAPI
     {
         String result = null;
         //attributeName = attributeName.toLowerCase();
+        if (this.attributes.containsKey(attributeName))
+        {
+            result = (String) this.attributes.get(attributeName);
+        }
+        return result;
+    }
+    
+    public final String getAttributeValue(String name, String defaultIfUndefined)
+    {
+        //String result = (String) attributes.get(name.toLowerCase());
+        String result = (String) attributes.get(name);
+        if (result == null) result = defaultIfUndefined;
+        return result;
+    }
+
+    
+    public final void setAttributeValue(String attributeName, String value)
+    {
+    	// This is apparently only used in relation to relation-activities, so dirty = true is probably ok
+        //attributes.put(attributeName.toLowerCase(), value.toLowerCase());
+    	// For 1.15
+        //attributes.put(attributeName.toLowerCase(), value);    	
+        attributes.put(attributeName, value);
+        level.setIsDirty(true,false);
+    }
+    
+    public final void setAttributeValueToNode(String attributeName, String value)
+    {
+        // Todo: Make sure that attribute really exists!!
+        //nodeRepresentation.getAttributes().getNamedItem(attributeName).setNodeValue(value.toLowerCase());
+    	// For 1.15
+    	nodeRepresentation.getAttributes().getNamedItem(attributeName).setNodeValue(value);
+    }
+
+    // 1.15 Tentatively removed
+//    public final void removeAttribute(String attributeName)
+//    {
+//        attributeName = attributeName.toLowerCase();
+//        this.attributes.remove(attributeName);
+//        this.nodeRepresentation.getAttributes().removeNamedItem(attributeName);
+//        level.setIsDirty(true,false);
+//    }
+    
+    
+    /** This method returns true if an attribute with name attributeName is defined for this Markable, i.e. if it 
+       has a non-null value in this.attributes, false otherwise. */
+    public final boolean isDefined(String attributeName)
+    {
+//        attributeName = attributeName.toLowerCase();
+        return this.attributes.containsKey(attributeName);
+    }
+
+    // 1.15 Tentatively removed    
+//    public final Markable cloneMarkable()
+//    {
+//        System.out.println(nodeRepresentation.getAttributes().toString());
+//        Markable result = new Markable(this.nodeRepresentation,this.ID,this.fragments,new HashMap<String, String>(this.attributes),this.level);
+//        return result;
+//    }
+    
+  
+}
