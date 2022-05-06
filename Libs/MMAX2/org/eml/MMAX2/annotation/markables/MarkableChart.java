@@ -325,3 +325,187 @@ public class MarkableChart
                     mode = MMAX2Constants.REMOVE_DES;
                 }
                 
+                if (mode != -1)
+                {
+                    MMAX2ActionSelector actionSelector = new MMAX2ActionSelector(currentPrimaryMarkable,modifiables,this,mode);
+                    // Some action is possible, so show selector                
+                    try
+                    {
+                        tempRect = mmax2.getCurrentTextPane().modelToView(popUp);
+                    }
+                    catch (javax.swing.text.BadLocationException ex)
+                    {
+                        System.out.println("Error with display position determination of dot position "+dot);
+                    }
+
+                    int xPos = (int)tempRect.getX();
+                    int yPos = (int)tempRect.getY()+MMAX2Constants.DEFAULT_FONT_SIZE+(MMAX2Constants.DEFAULT_FONT_SIZE/3);
+                    int currentScreenWidth = mmax2.getScreenWidth();
+                    int selectorWidth = actionSelector.getWidth();
+                    if ((xPos+mmax2.getX()) > currentScreenWidth/2)
+                    {
+                        xPos = xPos-selectorWidth;
+                    }
+                    actionSelector.show(mmax2.getCurrentTextPane(),xPos,yPos );                        
+                }
+            }   
+        }
+    }
+    
+    public final void removeTemporarySelection()
+    {
+        if (orderedLevels.length > 0)
+        {
+//            System.out.println("Remove temp selection");
+            SimpleAttributeSet styleToUse = new SimpleAttributeSet();            
+            // Problem: spaces between DiscourseElements remain highlighted, so first set everything to Color.white
+            StyleConstants.setBackground(styleToUse,Color.white);
+            
+            MMAX2Document doc = this.orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+            doc.startChanges(selectionStart,(selectionEnd-selectionStart)+1);
+            doc.bulkApplyStyleToDisplaySpanBackground(selectionStart, (selectionEnd-selectionStart)+1,styleToUse);
+            styleToUse = null;           
+            for (int z=dotsDiscoursePosition;z<=marksDiscoursePosition;z++)
+            {
+                // Get style at current pos
+                // This will also handle size and family now
+                styleToUse = getTopAttributesAtDiscourseElement(currentDiscourse.getDiscourseElementIDAtDiscoursePosition(z));
+                
+                doc.bulkApplyStyleToDiscourseElement(currentDiscourse.getDisplayStartPositionFromDiscoursePosition(z),styleToUse,true);
+            }
+            doc.commitChanges();
+        }
+    }
+    
+    public final void requestModifyMarkablesDEs(Markable modified, String[] DEs, int mode)
+    {
+        boolean success = false;
+        
+        // Determine range of markable before modification
+        int start = modified.getLeftmostDisplayPosition();
+        int end = modified.getRightmostDisplayPosition();        
+        
+        // Unregister in old, more complete state. This will be reversed by call to register if change did not succeed
+        modified.getMarkableLevel().unregisterMarkable(modified);        
+        // Now, modified does not have any mappings to discourse positions any more 
+        
+        if (mode == MMAX2Constants.REMOVE_DES)
+        {
+            /* Try to remove the desired DEs from modified. This will fail if
+               - the markable would be empty afterwards */            
+            success = modified.removeDiscourseElements(DEs);
+        }
+        else if (mode == MMAX2Constants.ADD_DES)//_BEFORE || mode == MMAX2.ADD_DES_AFTER)
+        {
+            success = modified.addDiscourseElements(DEs);
+        }
+        
+        if (success)
+        {
+            // If the removal of DEs was successful, reflect change in the display
+            SimpleAttributeSet styleToUse = new SimpleAttributeSet();
+            // Problem: spaces between DiscourseElements remain highlighted, so first set everything to Color.white
+            StyleConstants.setBackground(styleToUse,Color.white);
+            StyleConstants.setFontSize(styleToUse, MMAX2.currentDisplayFontSize);
+            StyleConstants.setFontFamily(styleToUse, MMAX2.currentDisplayFontName);        
+            MMAX2Document doc = this.orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+            doc.startChanges(start,(end-start)+1);
+            doc.bulkApplyStyleToDisplaySpanBackground(start, (end-start)+1,styleToUse);
+            doc.commitChanges();    
+            modified.getMarkableLevel().setIsDirty(true,true);
+        }
+        else
+        {
+            System.out.println("Markable modification failed");
+            MarkableHelper.register(modified,true);
+        }
+        // At any rate, re-register (with hash update) and recalc display positions
+        
+        MarkableHelper.setDisplayPositions(modified);
+
+        // Remove selection from mouse dragging
+        removeTemporarySelection();
+        // Re-render markable as selected
+        modified.renderMe(MMAX2Constants.RENDER_SELECTED);
+        // Re-display current markable to reflect changes to the string appearance
+        attributePanelContainer.displayMarkableAttributes(modified);
+    }
+    
+    
+    public final void setNextFreeMarkableSetNum(int num)
+    {
+        nextFreeMarkableSetNum = num;
+    }
+    
+    public final int getNextFreeMarkableSetNum()
+    {
+        return nextFreeMarkableSetNum;
+    }
+    
+    public final void setNextFreeMarkableIDNum(int num)
+    {
+        nextFreeMarkableIDNum = num;
+    }
+    
+    public final int getNextFreeMarkableIDNum()
+    {
+        return nextFreeMarkableIDNum;
+    }
+    
+    
+    public final void getMarkableLevelControlWindowToFront()
+    {
+        currentLevelControlWindow.toFront();
+    }
+
+    public final void getAttributeWindowToFront()
+    {
+        attributePanelContainer.toFront();
+    }
+
+    
+    public final void destroyDependentComponents()
+    {           
+        if (currentLevelControlWindow != null)
+        {
+            currentLevelControlWindow.destroyDependentComponents();
+            currentLevelControlWindow.setVisible(false);
+            currentLevelControlWindow = null;
+        }
+
+        if (currentLevelControlPanel != null)
+        {
+            currentLevelControlPanel.destroyDependentComponents();
+            currentLevelControlPanel.setVisible(false);
+            currentLevelControlPanel = null;
+        }
+                
+        
+        attributePanelContainer.setVisible(false);
+        attributePanelContainer = null;
+        levels = null;
+        
+        for (int z=0;z<this.size;z++)
+        {
+            ((MarkableLevel) orderedLevels[z]).destroyDependentComponents();
+        }  
+        orderedLevels = null;
+        
+        if (selector != null)
+        {
+            selector.setVisible(false);
+        }
+        selector = null;
+        
+        System.gc();
+    }
+    
+//    protected void finalize()
+//    {
+//        
+////        System.err.println("MarkableChart is being finalized!");        
+//        try
+//        {
+//            super.finalize();
+//        }
+//        catch (java.lang.Throwable ex)
