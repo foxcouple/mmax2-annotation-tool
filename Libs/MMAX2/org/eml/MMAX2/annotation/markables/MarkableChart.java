@@ -509,3 +509,219 @@ public class MarkableChart
 //            super.finalize();
 //        }
 //        catch (java.lang.Throwable ex)
+//        {
+//            ex.printStackTrace();
+//        }     
+//               
+//    }
+    
+    
+    public final void setShowMarkableLevelControlWindow(boolean show)
+    {
+        if (show) 
+        {
+            currentLevelControlWindow.pack();
+            currentLevelControlWindow.setVisible(true);
+        }
+        else currentLevelControlWindow.setVisible(false);
+    }
+    
+    public final void initMarkableRelations()
+    {
+        for (int z=0;z<size;z++)
+        {
+            ((MarkableLevel) orderedLevels[z]).initMarkableRelations(this.getCurrentDiscourse().getMMAX2());
+        }          
+    }
+        
+    public final Color getForegroundColorForLevel(String levelname)
+    {
+        return getMarkableLevelByName(levelname,false).getRenderer().getForegroundColor();
+    }
+
+    public final Color getHandleColorForLevel(String levelname)
+    {
+        return getMarkableLevelByName(levelname,false).getRenderer().getHandleColor();
+    }
+
+    /** This method returns the MarkableLevel object of name levelname, or null. */
+    public final MarkableLevel getMarkableLevelByName(String levelname, boolean interactive)
+    {
+        MarkableLevel result = null;
+        if (levelname.equalsIgnoreCase("basedata"))
+        {
+            result = new MarkableLevel(null, "","internal_basedata_representation", null, "");
+            result.setCurrentDiscourse(getCurrentDiscourse());
+        }
+        else 
+        {
+            result = (MarkableLevel) levels.get(levelname.toLowerCase());        
+        }
+        if (result == null)
+        {                        
+            if (interactive)
+            {
+                JOptionPane.showMessageDialog(null,"No MarkableLevel with name "+levelname+"!","MarkableChart",JOptionPane.ERROR_MESSAGE);
+            }
+            else
+            {
+                System.err.println("No MarkableLevel with name "+levelname);
+            }
+        }
+        return result;
+    }
+
+    
+    public final int getSize()
+    {
+        return size;
+    }
+    
+    public final void resetMarkablesForStyleSheetReapplication()
+    {
+        for (int z=0;z<this.size;z++)
+        {
+            ((MarkableLevel) orderedLevels[z]).resetMarkablesForStyleSheetReapplication();
+        }  
+    }
+
+    public final void initAttributePanelContainer()
+    {
+        for (int z=0;z<this.size;z++)
+        {
+            this.attributePanelContainer.addAttributePanel(((MarkableLevel) orderedLevels[z]).getCurrentAnnotationScheme().getCurrentAttributePanel(),((MarkableLevel) orderedLevels[z]).getMarkableLevelName(), orderedLevels[z].getCurrentAnnotationScheme().getSchemeFileName());
+        }  
+        this.attributePanelContainer.pack();
+        this.attributePanelContainer.setVisible(true);
+        this.attributePanelContainer.disableAll();
+        this.attributePanelContainer.setMMAX2(this.getCurrentDiscourse().getMMAX2());
+    }
+    
+    public final void initShowInMarkableSelectorPopupMenu()
+    {
+        this.attributePanelContainer.initShowInMarkableSelectorPopupMenu();
+    }
+    
+    /** This method adds the MarkableLayer layer to both this.orderedLayers and this.layers. */
+    public final void addMarkableLevel(MarkableLevel level)
+    {
+        if (this.size == 0)
+        {
+            /** This is the first MarkableLayer added to this MarkableChart. */
+            this.orderedLevels = new MarkableLevel[1];
+            this.orderedLevels[0] = level;
+        }
+        else
+        {
+            /** There are already MarkableLayers in the MarkableChart. */
+            /** Create new array to accept old MLs plus the new one. */
+            MarkableLevel[] tempLevels = new MarkableLevel[this.size+1];
+            /** Copy old layers to new array */
+            System.arraycopy(this.orderedLevels,0,tempLevels,0,this.size);
+            /** Append new layer at the end. */
+            tempLevels[size] = level;
+            this.orderedLevels = tempLevels;
+        }
+        level.setPosition(this.size);
+        this.size++;
+                        
+        /** Put also in hash so layers are retrieveable by level name */
+        // Leave as lc when used as hash key
+        levels.put(new String(level.getMarkableLevelName().toLowerCase()),level);      
+        
+        /** Create control in layerControlPanel */
+        currentLevelControlPanel.addLevel(level);            
+    }
+
+    
+    public final void initializeSaveMenu(JMenu menu)
+    {
+        menu.removeAll();
+        MarkableLevel currentLevel = null;
+        for (int z=0;z<this.size;z++)
+        {
+            currentLevel = (MarkableLevel) orderedLevels[z];
+            menu.add(currentLevel.getSaveMarkableLevelItem());
+        }          
+    }
+    
+    public final MarkableLevel removeMarkableLevel(MarkableLevel level)
+    {
+        return (MarkableLevel)(levels.remove(level.getMarkableLevelName().toLowerCase()));
+    }
+        
+    
+    /** This method returns an array which contains for each MarkableLayer one array of markables 
+        found on this layer at DiscoursePosition position. If a MarkableLayer does not have any markables at position,
+        the corresponding array entry is a markable array of length 0. */
+    public final Markable[][] getMarkablesAtDiscoursePosition(int position, boolean activeLevelsOnly)
+    {     
+        Markable[][] result = new Markable[this.size][0];
+        Markable[] tempResult = null;
+        MarkableLevel currentLevel = null;
+        
+        // Iterate over all layers
+        for (int z=0;z<this.size;z++)
+        {
+            currentLevel = (MarkableLevel) orderedLevels[z];
+            if ((!activeLevelsOnly) || currentLevel.getIsActive())
+            {
+                /** Get Array of Markables from each MarkableLayer separately, or empty markable array if none. */
+                tempResult = currentLevel.getAllMarkablesAtDiscoursePosition(position);
+                result[z] = tempResult;
+            }
+        }  
+        return result;
+    }
+
+    
+    public final boolean getIsAnyMarkableLevelModified()
+    {
+        boolean result = false;
+        MarkableLevel currentLevel = null;
+        for (int z=0;z<size;z++)
+        {
+            currentLevel = (MarkableLevel) orderedLevels[z];
+            if (currentLevel.getIsDirty())
+            {
+                result = true;
+                break;
+            }
+        }  
+        return result;
+    }
+    
+    /** This method returns the background color to be displayed at display position displayPosition, where the latter is assumed
+        to be the position of a MarkableHandle. It is used for removing the highlighting from MarkableHandles, and returns either
+        selectionBackgroundColor if the current MarkableHandle is in a currently selected Markable, or white otherwise. 
+        This is selection-sensitive! MarkableLayers are not accessed, so no active/inactive distinction necessary. */
+    public final Color getPrevailingBackgroundColorForMarkableHandle(int displayPosition)
+    {        
+        // Use normal background as default
+        Color resultColor = Color.white;
+        
+        // This assumes that no attribute-dependent background colors under MarkableHandles exist for Markables!! 
+        // That is correct, since no markables exist at markable handle positions (they are always at the borders of fragments). 
+        try
+        {
+            if ((currentDiscourse.getMMAX2().getCurrentPrimaryMarkable().coversDisplayPosition(displayPosition)) ||
+                (currentDiscourse.getMMAX2().getCurrentSecondaryMarkable().coversDisplayPosition(displayPosition)))
+            {
+                // displayPosition is in a currently selected Markable, so selectionbackgroundColor is prevailing there
+                resultColor = StyleConstants.getBackground(currentDiscourse.getMMAX2().getSelectedStyle());
+                
+            }
+        }
+        catch (java.lang.NullPointerException ex)
+        {
+            // no currently selectecd markables
+        }        
+        return resultColor;
+    }
+    
+    /** This method returns the attributes currently visible at the position of DiscourseElement de_id. It is the main method for
+        markable-related display rendering, and takes into account customized Markable attributes. 
+        Attributes for a given de_id are determined as follows:
+        1. Each MarkableLevel is considered in turn, beginning with the DEEPEST level and moving up. This way, attributes
+           on higher levels have precedence over lower levels, and attributes from lower levels can percolate up
+           unless they are EXPLICITLY overwritten by incompatible ones on a higher level. 
