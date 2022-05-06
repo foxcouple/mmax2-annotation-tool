@@ -725,3 +725,178 @@ public class MarkableChart
         1. Each MarkableLevel is considered in turn, beginning with the DEEPEST level and moving up. This way, attributes
            on higher levels have precedence over lower levels, and attributes from lower levels can percolate up
            unless they are EXPLICITLY overwritten by incompatible ones on a higher level. 
+          2. All Markables on the current MarkableLevel are retrieved (in document order, shorter before
+             longer ones (why?)).
+             3. Each Markable is considered in turn, beginning with the TOP one.
+     */
+    public final SimpleAttributeSet getTopAttributesAtDiscourseElement(String de_id)//, boolean activeLevelsOnly)
+    {
+        // This method uses renderer.getAttributesForMarkable();
+        MarkableLevel currentLevel = null;
+        Markable[] activeMarkables = null;
+        SimpleAttributeSet result = new SimpleAttributeSet();
+        SimpleAttributeSet tempResult = null;
+        
+        // Iterate over layers backwards, so that higher attributes have precedence, but deeper attributes can percolate up if
+        // they are not EXPLICITLY overwritten by higher ones. 
+        // Overwriting by setting a value to false is not possible!! 
+        for (int z=size-1;z>=0;z--)
+        {
+            // Get current level
+            currentLevel = orderedLevels[z];   
+            if (currentLevel.getIsVisible())
+            {
+                // Get all Markables from the current layer that de_id is part of (efficient, since hashed)
+                // Why sort here?
+                activeMarkables = currentLevel.getAllMarkablesAtDiscourseElement(de_id, true);            
+                if (activeMarkables != null)
+                {
+                    // If some Markables were found, iterate over them
+                    for (int q=0;q<activeMarkables.length;q++)
+                    {
+                        // For each Markable, get the attributes it has based on its features. If no feature-dependent attributes
+                        // exist, this will return the explicitlyAssociatedAttributes for the current layer.
+                        // That means that for 'uncustomized' markables from transparent layers, attributes will not contain any colors ( ?? )                        
+                        // Get Attributes for current markable on current level
+                        tempResult = currentLevel.getRenderer().getAttributesForMarkable(activeMarkables[q]);
+                        if (result == null)
+                        {
+                            // This can never happen, since getAttributesForMarkables always returns a valid SimpleAttributeSet
+                            result = tempResult;
+                        }
+                        else
+                        {
+                            SimpleAttributeSet intermediate = MarkableLevelRenderer.mergeAttributes(tempResult,result);
+                            result = intermediate;
+                            intermediate = null;
+                        }
+                    }
+                }
+            } 
+        }
+        // If no color made it to the top, use default colors here
+        if (result.isDefined(StyleConstants.Foreground)==false)
+        {
+            StyleConstants.setForeground(result,Color.black);
+        }        
+        if (result.isDefined(StyleConstants.Background)==false)
+        {
+            StyleConstants.setBackground(result,Color.white);
+        }        
+        if (result.isDefined(StyleConstants.FontSize)==false)
+        {
+            // If no attribute-dependent size exists, use current display size
+            StyleConstants.setFontSize(result,MMAX2.currentDisplayFontSize);
+        }             
+        if (result.isDefined(StyleConstants.FontFamily)==false)
+        {
+            // If no attribute-dependent font name exists, use current display font
+            StyleConstants.setFontFamily(result,MMAX2.currentDisplayFontName);
+        }             
+
+        return result;
+    }
+
+           
+    /** This method returns a node list with all _active_ Markables started at DiscourseElement with ID discourseElementId. Markables 
+        are grouped by levels in reverse MarkableChart layer order (cf. this.orderedLayers[]). Within each group, Markables are ordered 
+        in discourse position order, with longer before shorter ones (for embedding visualization). */
+    public final NodeSet getActiveStartedMarkables(String discourseElementId)
+    {
+        NodeSet result = new NodeSet();
+        // Iterate over all levels in reverse order, 
+        // so that deeper levels are processed before higher ones. 
+        MarkableLevel level = null;
+        for (int z=size-1;z>=0;z--)
+        {
+            // Get current level
+            level = (MarkableLevel) orderedLevels[z];
+            if ((level.getIsActive() || level.getIsVisible()) && level.isDefined())
+            {
+                // getStartedMarkables returns a list in the proper ordering for opening bracket insertion.
+                level.getAllStartedMarkablesAsNodes(discourseElementId, result);
+            }
+        }        
+        return result;
+    }
+
+
+    /** This method returns a node list with all _active_ Markables started at DiscourseElement with ID discourseElementId. Markables 
+        are grouped by levels in reverse MarkableChart layer order (cf. this.orderedLayers[]). Within each group, Markables are ordered 
+        in discourse position order, with longer before shorter ones (for embedding visualization). */
+    public final NodeSet getActiveStartedMarkables(String discourseElementId, String levels)
+    {
+        NodeSet result = new NodeSet();       
+        MarkableLevel level = null;
+        String currentLevelName = "";
+        // Iterate over all levels in reverse order, 
+        // so that deeper levels are processed before higher ones. 
+        for (int z=size-1;z>=0;z--)
+        {
+            // Get current level
+            level = (MarkableLevel) orderedLevels[z];
+            if ((level.getIsActive() || level.getIsVisible()) && level.isDefined())
+            {
+                currentLevelName = level.getMatchableMarkableLevelName();
+                if (levels.indexOf(currentLevelName)==-1)
+                {
+                    // Skip if level name not in list to retrieve
+                    continue;
+                }                
+                // getStartedMarkables returns a list in the proper ordering for opening bracket insertion.
+                level.getAllStartedMarkablesAsNodes(discourseElementId, result);
+            }            
+        }        
+        return result;
+    }
+        
+    public final ArrayList<Markable> getAllStartedMarkables(String deID)
+    {
+        ArrayList<Markable> result = new ArrayList();
+        Markable[] tempResult = null;
+        for (int z=0;z<size;z++)
+        {
+            MarkableLevel level = (MarkableLevel) orderedLevels[z];
+            // Get array of all markables ending at discourseElementId
+            tempResult = level.getAllMarkablesStartedByDiscourseElement(deID);
+            if (tempResult != null)
+            {
+                int len = tempResult.length;
+                // Add them to temporary ArrayList
+                for (int o=0;o<len;o++)
+                {
+                    if (tempResult[o] != null)
+                    {
+                        result.add((Markable)tempResult[o]);                    
+                    }
+                }
+            }
+        }
+        return result;
+    }
+    
+    public final ArrayList<Markable> getAllEndedMarkables(String deID)
+    {
+        ArrayList<Markable> result = new ArrayList<Markable>();
+        Markable[] tempResult = null;
+        for (int z=0;z<size;z++)
+        {
+            MarkableLevel level = (MarkableLevel) orderedLevels[z];
+            // Get array of all markables ending at discourseElementId
+            tempResult = level.getAllMarkablesEndedByDiscourseElement(deID);
+            if (tempResult != null)
+            {
+                int len = tempResult.length;
+                // Add them to temporary ArrayList
+                for (int o=0;o<len;o++)
+                {
+                    if (tempResult[o] != null)
+                    {
+                        result.add((Markable)tempResult[o]);                    
+                    }
+                }
+            }
+        }
+        return result;
+    }
+        
