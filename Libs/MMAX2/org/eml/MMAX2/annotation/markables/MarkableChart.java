@@ -1075,3 +1075,191 @@ public class MarkableChart
         }
         /** Get layer to be replaced by the one at posToChange */
         if (direction.equals("up")) 
+        {
+            // Swap Layers 
+            movee = orderedLevels[posToChange-1];            
+            movee.setPosition(movee.getPosition()+1);
+            orderedLevels[posToChange].setPosition(orderedLevels[posToChange].getPosition()-1);
+            orderedLevels[posToChange-1] = orderedLevels[posToChange];
+            orderedLevels[posToChange] = movee;
+        }
+        else
+        {
+            movee = orderedLevels[posToChange+1];
+            movee.setPosition(movee.getPosition()-1);
+            orderedLevels[posToChange].setPosition(orderedLevels[posToChange].getPosition()+1);            
+            orderedLevels[posToChange+1] = orderedLevels[posToChange];
+            orderedLevels[posToChange] = movee;            
+        }
+        
+        currentLevelControlPanel.clear();
+        currentLevelControlPanel.addLevels(orderedLevels);
+        currentLevelControlPanel.revalidate();  
+    }
+    
+    
+    public final void requestCopyMarkableSetToLevel(MarkableSet setToCopy, MarkableLevel target)
+    {    	
+    	MMAX2Attribute targetAttribute = null;
+        MMAX2Attribute[] targetAttributes =target.getCurrentAnnotationScheme().getAttributesByNameAndType("^"+setToCopy.getMarkableRelation().getAttributeName()+"$", AttributeAPI.MARKABLE_SET, AttributeAPI.MARKABLE_SET);
+        if (targetAttributes.length > 0)
+        {
+        	targetAttribute = targetAttributes[0];
+        }
+        
+        if (targetAttribute==null)
+        {
+            // The target level does not have an attribute to copy to
+            System.err.println("Cannot copy to level "+target.getMarkableLevelName()+". No appropriate target attribute!");
+            return;
+        }
+        
+        MarkableRelation targetRelation = targetAttribute.getMarkableRelation();
+        
+        // Get list of all markables to copy to target level
+        ArrayList<Markable> markablesToCopy = (ArrayList<Markable>)java.util.Arrays.asList(setToCopy.getOrderedMarkables());
+        Markable currentToCopy = null;
+        Markable chainInitial = null;
+        // Iterate over all markables in set to be copied
+        for (int u=0;u<markablesToCopy.size();u++)
+        {
+            // Get current markable
+            currentToCopy = (Markable) markablesToCopy.get(u);
+            // If an identical markables does not exist, re-create current on new level
+            if (target.getMarkableAtSpan(MarkableHelper.getSpan(currentToCopy))==null)
+            {
+                requestCopyMarkableToLevel(currentToCopy, target.getMarkableLevelName());
+            }
+        }
+
+        // Now, there is a markable on target level for each markable in setToCopy
+        // It was either already there, or has been created above
+                
+        // Itersate over all markables to copy again
+        for (int u=0;u<markablesToCopy.size();u++)
+        {
+            // Get current markable
+            currentToCopy = (Markable) markablesToCopy.get(u);
+            // Get twin markable on target level
+            Markable copy = target.getMarkableAtSpan(MarkableHelper.getSpan(currentToCopy));
+            if (chainInitial == null)
+            {
+                chainInitial = copy;
+                addMarkableToNewMarkableSet(copy, targetRelation);
+            }
+            else
+            {
+                addMarkableToExistingMarkableSet(copy, targetRelation.getMarkableSetContainingMarkable(chainInitial),false);
+            }            
+        }                        
+    }
+    
+    public final void requestModifyLiteralDisplayText(int displayPos, String newString, String oldString)
+    {
+        // Only if this was called by a right-click on a handle, and if option is selected
+        if (displayPos != -1 && attributePanelContainer.attemptAutoUpdate()==true)
+        {
+            // Stop all other click events
+            getCurrentDiscourse().getMMAX2().setIgnoreCaretUpdate(true);
+            // Get element at clicked position
+            javax.swing.text.Element ele = getCurrentDiscourse().getMMAX2().getCurrentDocument().getCharacterElement(displayPos);
+            int start = ele.getStartOffset();
+            int end = ele.getEndOffset();
+            // Get len of text to be replaced which should be constant (as set via style sheet)
+            int len = end-start;
+            // Get text at clicked display pos element, this will contain any spaces used in the addHandleMethod!
+            String textAtHandle = "";
+            try
+            {
+                textAtHandle = getCurrentDiscourse().getMMAX2().getCurrentDocument().getText(start,len);
+            }
+            catch (javax.swing.text.BadLocationException ex)
+            {
+
+            }
+            
+            System.err.println("Text at handle: '"+textAtHandle+"'");
+            
+            // Check whether textAtHandle minus trailing spaces is the old value we have chosen to change
+            if (textAtHandle.trim().equalsIgnoreCase(oldString))
+            {
+                // The text at the handle is indeed the old value of the att we want to change
+                // New May 27th: Update display only if auto-apply is active
+                if (attributePanelContainer.isAutoApply())
+                {
+                    // New May 27th: Make sure update is only attempted if new text fits into space of old
+                    if (newString.length() > textAtHandle.length())
+                    {
+                        String message = "Warning: Cannot update display with new value (length mismatch).\nUse 'Reapply current style sheet' to update display!";
+                        JOptionPane.showMessageDialog(getCurrentDiscourse().getMMAX2(),message,"One-click annotation",JOptionPane.WARNING_MESSAGE);
+                        getCurrentDiscourse().getMMAX2().setIgnoreCaretUpdate(false);
+                        return;
+                    }
+                    
+                    // Fill newValue to be the same size as len
+                    newString = newString+"   ";
+                    newString = newString.substring(0,len);
+                    ((MMAX2Document)getCurrentDiscourse().getMMAX2().getCurrentDocument()).startChanges(start,len);
+                    try
+                    {
+                        getCurrentDiscourse().getMMAX2().getCurrentDocument().replace(start,len, newString, ele.getAttributes());
+                    }
+                    catch (javax.swing.text.BadLocationException ex)
+                    {            
+                    
+                    }
+                }
+                else
+                {
+                    String message="Note: Activate 'Auto-apply' on the Attribute Window to automatically update the display!\nThe display will not be updated automatically unless you use this option.\nAlso, note that you have to select 'Apply' manually to apply your changes!";
+                    JOptionPane.showMessageDialog(getCurrentDiscourse().getMMAX2(),message,"One-click annotation",JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+            else
+            {
+                // Auto-update is impossible anyway
+                System.err.println("Attribute and handle mismatch, cannot update display!");
+                if (attributePanelContainer.isAutoApply()==false)
+                {
+                    // But show reminder for auto-apply
+                    String message="Note: Activate 'Auto-apply' on the Attribute Window to automatically apply your changes!\n";
+                    JOptionPane.showMessageDialog(getCurrentDiscourse().getMMAX2(),message,"One-click annotation",JOptionPane.INFORMATION_MESSAGE);                    
+                }
+            }
+        }
+        // Allow other click events
+        getCurrentDiscourse().getMMAX2().setIgnoreCaretUpdate(false);
+    }
+    
+    
+    
+    /** This method is called by the display caret listener whenever a markabls is right-clicked. */
+    public final void markableRightClicked(Markable secondaryMarkable, int displayPos)
+    {                
+        MMAX2Attribute[] primaryMarkablesAttributes = null;
+        MMAX2Attribute[] secondaryMarkablesAttributes = null;
+        selector = null;
+        // Set reference to secondary markable
+        currentDiscourse.getMMAX2().setCurrentSecondaryMarkable(secondaryMarkable);
+        // Get reference to primary markable, if any
+        Markable primaryMarkable = currentDiscourse.getMMAX2().getCurrentPrimaryMarkable();        
+        if (primaryMarkable != null && primaryMarkable != secondaryMarkable)
+        {
+            // If we have a primaryMarkable and it is not identical to second one
+            // Get both markables' attributes (as input to ActionSelector constructor)            
+                      
+            primaryMarkablesAttributes = primaryMarkable.getValidatedAttributes();
+            secondaryMarkablesAttributes = secondaryMarkable.getValidatedAttributes();            
+            // Reset attribute window to prior state
+            attributePanelContainer.displayMarkableAttributes(primaryMarkable);
+            // Create action selector
+            selector = new MMAX2ActionSelector(primaryMarkablesAttributes, primaryMarkable, secondaryMarkablesAttributes, secondaryMarkable, this);
+        }
+        else if (primaryMarkable != secondaryMarkable)
+        {
+            //System.out.println("No current primary or same!");
+            // E.g. deleting should be possible       
+            selector = new MMAX2ActionSelector(secondaryMarkable, primaryMarkable, this,true);
+        }
+        else if (primaryMarkable == secondaryMarkable)
+        {
