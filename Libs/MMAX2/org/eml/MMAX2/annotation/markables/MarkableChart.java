@@ -900,3 +900,178 @@ public class MarkableChart
         return result;
     }
         
+    /** This method returns a node list with all _active_ Markables ended at DiscourseElement with ID discourseElementId. Markables 
+        are grouped by levels in MarkableChart layer order (cf. this.orderedLayers[]). Within each group, Markables 
+        are ordered in discourse position order, but with shorter before longer ones (for embedding visualization). */    
+    public final NodeSet getActiveEndedMarkables(String discourseElementId)
+    {
+        NodeSet result = new NodeSet();
+        MarkableLevel level = null;
+        /** Iterate over all layers */
+        for (int z=0;z<size;z++)
+        {
+            level = (MarkableLevel) orderedLevels[z];
+            if ((level.getIsActive()|| level.getIsVisible()) && level.isDefined())
+            {
+                // Get array of all markables ending at discourseElementId
+                level.getAllEndedMarkablesAsNodes(discourseElementId,result);
+            }
+        }        
+        return result;
+    }
+
+    /** This method returns a node list with all _active_ Markables ended at DiscourseElement with ID discourseElementId. Markables 
+        are grouped by levels in MarkableChart layer order (cf. this.orderedLayers[]). Within each group, Markables 
+        are ordered in discourse position order, but with shorter before longer ones (for embedding visualization). */    
+    public final NodeSet getActiveEndedMarkables(String discourseElementId, String levels)
+    {
+        NodeSet result = new NodeSet();
+        MarkableLevel level = null;
+        String currentLevelName = "";
+        /** Iterate over all layers */
+        for (int z=0;z<size;z++)
+        {
+            level = (MarkableLevel) orderedLevels[z];
+            if ((level.getIsActive()|| level.getIsVisible()) && level.isDefined())
+            {
+                currentLevelName = level.getMatchableMarkableLevelName();
+                if (levels.indexOf(currentLevelName)==-1)
+                {
+                    continue;
+                }                
+                // Get array of all markables ending at discourseElementId
+                level.getAllEndedMarkablesAsNodes(discourseElementId,result);
+            }            
+        }        
+        return result;
+    }
+    
+    
+//    /** This method returns a node list with all _active_ Markables ended at DiscourseElement with ID discourseElementId. Markables 
+//        are grouped by levels in MarkableChart layer order (cf. this.orderedLayers[]). Within each group, Markables 
+//        are ordered in discourse position order, but with shorter before longer ones (for embedding visualization). */    
+//    public final NodeSet getActiveEndedMarkables_bak(String discourseElementId)
+//    {
+//        ArrayList tempCollection = new ArrayList();
+//        NodeSet result = new NodeSet();
+//        Markable[] tempResult = null;
+//        /** Iterate over all layers */
+//        for (int z=0;z<size;z++)
+//        {
+//            MarkableLevel level = (MarkableLevel) orderedLevels[z];
+//            if ((level.getIsActive()|| level.getIsVisible()) && level.isDefined())
+//            {
+//                // Get array of all markables ending at discourseElementId
+//                tempResult = level.getAllMarkablesEndedByDiscourseElement(discourseElementId);
+//                if (tempResult != null)
+//                {                                        
+//                    int len = tempResult.length;
+//                    // Add them to temporary ArrayList
+//                    for (int o=0;o<len;o++)
+//                    {
+//                        if (tempResult[o] != null)
+//                        {
+//                            tempCollection.add((Markable)tempResult[o]);                    
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        tempResult = null;
+//        tempResult = (Markable[]) tempCollection.toArray(new Markable[1]);        
+//
+//        for (int o=0;o<tempResult.length;o++)
+//        {            
+//            if (tempResult[o] != null)
+//            {
+//                result.insertElementAt(tempResult[o].getNodeRepresentation(),o);
+//            }
+//        }
+//        return result;
+//    }
+    
+    
+    public final void setMarkableLevelDisplayPositions()
+    {
+        for (int z=0;z<size;z++)
+        {
+            ((MarkableLevel) orderedLevels[z]).setMarkableDisplayPositions();
+        }        
+    }
+        
+    public final void createDiscoursePositionToMarkableMappings()
+    {
+        for (int z=0;z<size;z++)
+        {
+            ((MarkableLevel) orderedLevels[z]).createDiscoursePositionToMarkableMapping();
+        }
+    }
+    
+    public final void updateLabels()
+    {
+        for (int z=0;z<size;z++)
+        {
+            ((MarkableLevel) orderedLevels[z]).updateNameLabelText();
+        }
+    }    
+
+    public final void validateAll()
+    {
+        for (int z=0;z<size;z++)
+        {        
+            ((MarkableLevel) orderedLevels[z]).validate();
+        }
+    }    
+
+    public final void resetHasHandles()
+    {
+        for (int z=0;z<size;z++)
+        {
+            ((MarkableLevel) orderedLevels[z]).setHasHandles(false);
+        }
+    }    
+    
+    public final MarkableLevelControlPanel getCurrentLevelControlPanel()
+    {
+        return currentLevelControlPanel;
+    }
+            
+    public final ArrayList getLevelAndAttributeNamesForValues(String valueList, String optionalAttributeName, boolean activeLevelsOnly)
+    {
+        ArrayList result = new ArrayList();
+        // Iterate over all levels
+        for (int z=0;z<size;z++)
+        {
+            // Get list of attribute names on the current level for which *all* values are defined
+            // New: Consider currently ACTIVE levels only, if so desired!!
+            if (((MarkableLevel) orderedLevels[z]).getIsActive()==false && activeLevelsOnly)
+            {
+                continue;
+            }
+            ArrayList temp = ((MarkableLevel) orderedLevels[z]).getAttributeNamesForValues(valueList, optionalAttributeName);
+            // Iterate over all names found
+            for (int b=0;b<temp.size();b++)
+            {
+                // Create list of level:attribute
+                // Note: For freetext attributes which were passed in by means of optionalAttributeName,
+                // entries in the list below will have a * prepended to the attribute name
+                result.add(((MarkableLevel) orderedLevels[z]).getMarkableLevelName()+":"+(String)temp.get(b));
+            }
+        }                
+        return result;
+    }
+    
+    public final void reorderMarkableLayers(String command)
+    {
+        MarkableLevel movee = null;
+        /** Get position of Layer to be moved */
+        int posToChange = Integer.parseInt(command.substring(command.indexOf(":")+1));
+        /** Get direction of move. */
+        String direction = command.substring(0,command.indexOf(":"));
+        if (((posToChange == 0) && direction.equals("up")) ||
+           ((posToChange == size-1) && direction.equals("down")))
+        {
+            return;
+        }
+        /** Get layer to be replaced by the one at posToChange */
+        if (direction.equals("up")) 
