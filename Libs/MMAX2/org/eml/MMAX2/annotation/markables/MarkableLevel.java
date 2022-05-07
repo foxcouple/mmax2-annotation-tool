@@ -462,3 +462,213 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
     }
     
     
+    /** This method returns a list of attribute names for which *all* the values in valueList are defined,
+        or empty list. valueList is a comma-separated list of values, and the entire list is enclosed in 
+        curly braces. */
+    public final ArrayList getAttributeNamesForValues(String valueList, String optionalAttributeName)
+    {
+        return annotationscheme.getAttributeNamesForValues(valueList, optionalAttributeName);
+    }
+    
+    public final void setValidateButtonEnabled(boolean status)
+    {
+        validateButton.setEnabled(status);
+    }
+    
+    public final void validate()
+    {
+        if (isVerbose()) System.err.println("Validating "+markableHash.size() +" markables from MarkableLevel "+getMarkableLevelName());
+        Iterator allMarkables = markableHash.values().iterator();
+        Markable current = null;
+        // Hide attribute window during validation
+        getCurrentAnnotationScheme().getCurrentAttributePanel().getContainer().setVisible(false);
+        // Iterate over all Markables on this level
+        while (allMarkables.hasNext())
+        {
+            // Get next Markable
+            current =(Markable)allMarkables.next();
+            // Leave validation and adding of defaults to Attribute Window
+            getCurrentAnnotationScheme().getCurrentAttributePanel().displayMarkableAttributes(current);
+        }
+        getCurrentAnnotationScheme().getCurrentAttributePanel().getContainer().setVisible(true);
+        getCurrentAnnotationScheme().getCurrentAttributePanel().displayMarkableAttributes(null);
+    }
+    
+    public final void deleteAllMarkables()
+    {
+        ArrayList temp = new ArrayList();
+        Iterator allMarkables = markableHash.values().iterator();
+        while (allMarkables.hasNext())
+        {
+            temp.add((Markable)allMarkables.next());
+        }
+        allMarkables = null;
+        
+        for (int b=0;b<temp.size();b++)
+        {
+            deleteMarkable((Markable)temp.get(b));
+        }
+    }
+    
+    public final void deleteMarkable(Markable deletee)
+    {                   
+        // Get set relations deletee may be part of
+        MarkableRelation[] currentRelations = getActiveMarkableSetRelationsForMarkable(deletee);
+        // Iterate over all set relations
+        for (int b=0;b<currentRelations.length;b++)
+        {
+            MarkableRelation relation = currentRelations[b];
+            MarkableSet set = relation.getMarkableSetContainingMarkable(deletee);
+            if (set!=null)
+            {
+                set.removeMarkable(deletee);
+            }
+        }
+        
+        // Get reference to root node
+        Node root= markableDOM.getElementsByTagName("markables").item(0);
+        // Remove deletee (as node) from this
+        root.removeChild(deletee.getNodeRepresentation());
+        // Remove deletee from markableHash, the sole markable repository
+        markableHash.remove(deletee.getID());
+        unregisterMarkable(deletee);
+        if (getCurrentDiscourse().getHasGUI())
+        {
+            Integer[] positions = currentDiscourse.removeDisplayAssociationsForMarkable(deletee);
+            if (positions.length != 0)
+            {
+                renderer.removeHandlesAtDisplayPositions(positions);        
+            }       
+            deletee.renderMe(MMAX2Constants.RENDER_REMOVED);
+            // Destroy further references to deletee markable
+            currentDiscourse.getMMAX2().setCurrentSecondaryMarkable(null);
+            currentDiscourse.getMMAX2().getCurrentTextPane().setCurrentHoveree(null,0);            
+        }                
+        deletee = null;
+        setIsDirty(true,true);
+    }
+
+    public final Markable addMarkable(String[] discourseElementIDs, HashMap attributes)
+    {
+    	if (attributes == null) attributes = new HashMap();
+    	ArrayList discourseElements = new ArrayList();
+    	for (int n=0;n<discourseElementIDs.length;n++)
+    	{
+    		discourseElements.add(currentDiscourse.getDiscourseElementByID(discourseElementIDs[n]));
+    	}
+    	return addMarkable(discourseElements,attributes);
+    }
+    
+    public final Markable addMarkable(ArrayList discourseElements, HashMap attributes)
+    {
+    	String[][] fragments = MarkableHelper.toFragments(discourseElements);
+    	return addMarkable(fragments, attributes);
+    }
+
+    public final Markable addMarkable(String[][] fragments, HashMap attributes)
+    {
+        // Create new ID String 
+        String id = currentDiscourse.getCurrentMarkableChart().getNextFreeMarkableID();
+        // Get independent attribute with default values, incl. those dependent on default, and so on
+        MMAX2Attribute[] mmaxAttributes = (MMAX2Attribute[])annotationscheme.getInitialAttributes().toArray(new MMAX2Attribute[0]);
+        // Create node representation
+        ElementImpl node =(ElementImpl) markableDOM.createElementNS(markableNameSpace,"markable");
+        Node root= markableDOM.getElementsByTagName("markables").item(0);
+        root.insertBefore((Node)node,root.getFirstChild());
+        for (int i=0;i<mmaxAttributes.length;i++)
+        {
+            String currentAttrib = ((MMAX2Attribute)mmaxAttributes[i]).getDisplayName();
+            if (attributes.containsKey(currentAttrib)==false)
+            {
+                attributes.put(new String(currentAttrib),new String(((MMAX2Attribute)mmaxAttributes[i]).getSelectedValue()));
+                ((Element)node).setAttribute(new String(currentAttrib),new String(((MMAX2Attribute)mmaxAttributes[i]).getSelectedValue()));
+            }
+            else
+            {
+                // The supplied attributes (via create) have precedence over default ones
+            }
+        }
+        ((Element)node).setAttribute(new String("id"),new String(id));
+        // Create new markable object from above parameters
+        Markable newMarkable = new Markable((Node)node,id,fragments,attributes,this);
+
+//        System.out.println(fragments);
+        
+        markableHash.put(id, newMarkable);
+        MarkableHelper.setDisplayPositions(newMarkable);
+        
+        for (int z=0;z<fragments.length;z++)
+        {
+            String[] currentFragment = fragments[z];
+            for (int y=0;y<currentFragment.length;y++)
+            {
+                updateDiscoursePositionToMarkableMapping(fragments[z][y]);
+            }
+        }
+        
+        // Make sure Markable is displayed properly
+        if (currentDiscourse.getHasGUI())
+        {
+            MMAX2Document doc =currentDiscourse.getDisplayDocument();
+            doc.startChanges(newMarkable);               
+            newMarkable.renderMe(MMAX2Constants.RENDER_UNSELECTED);
+            doc.commitChanges();
+        }
+        // NEW: 
+        setIsDirty(true,true);
+        
+        return newMarkable;
+    }
+    
+    
+    public final Markable addMarkable(String fragment)
+    {
+        // Create new ID String 
+        String id = currentDiscourse.getCurrentMarkableChart().getNextFreeMarkableID();
+        // Create fragments array of arrays from word4..word12; this is never discontinuous
+        String[][] fragments = parseMarkableSpan(fragment,currentDiscourse.getWordDOM(),this);
+        // Create and get attributes for new markable        
+        HashMap attributes = new HashMap();
+        // Get independent attribute with default values, incl. those dependent on default, and so on
+        MMAX2Attribute[] mmaxAttributes = (MMAX2Attribute[])annotationscheme.getInitialAttributes().toArray(new MMAX2Attribute[0]);
+        // Create node representation
+        ElementImpl node =(ElementImpl) markableDOM.createElementNS(markableNameSpace,"markable");
+        Node root= markableDOM.getElementsByTagName("markables").item(0);
+        root.insertBefore((Node)node,root.getFirstChild());
+        for (int i=0;i<mmaxAttributes.length;i++)
+        {
+            attributes.put(new String(((MMAX2Attribute)mmaxAttributes[i]).getDisplayName()),new String(((MMAX2Attribute)mmaxAttributes[i]).getSelectedValue()));
+            ((Element)node).setAttribute(new String(((MMAX2Attribute)mmaxAttributes[i]).getDisplayName()),new String(((MMAX2Attribute)mmaxAttributes[i]).getSelectedValue()));
+        }
+        ((Element)node).setAttribute(new String("id"),new String(id));
+        // Create new markable object from above parameters
+        Markable newMarkable = new Markable((Node)node,id,fragments,attributes,this);        
+        markableHash.put(id, newMarkable);
+        MarkableHelper.setDisplayPositions(newMarkable);
+        
+        for (int z=0;z<fragments.length;z++)
+        {
+            String[] currentFragment = fragments[z];
+            for (int y=0;y<currentFragment.length;y++)
+            {
+                updateDiscoursePositionToMarkableMapping(fragments[z][y]);
+            }
+        }
+        
+        // Make sure Markable is displayed properly
+        if (currentDiscourse.getHasGUI())
+        {
+            MMAX2Document doc =currentDiscourse.getDisplayDocument();
+            doc.startChanges(newMarkable);               
+            newMarkable.renderMe(MMAX2Constants.RENDER_UNSELECTED);
+            doc.commitChanges();
+        } 
+        setIsDirty(true,true);
+        
+        
+        return newMarkable;
+    }
+            
+    public final void saveMarkables(String newFileName)
+    {
+    	saveMarkables(newFileName, false);
