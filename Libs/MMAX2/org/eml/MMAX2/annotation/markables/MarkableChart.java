@@ -1833,3 +1833,84 @@ public class MarkableChart
             result = true;
         }
         return result;
+    }    
+    
+    public final boolean inMarkableFromLevel(String markableID, String ownLevelName, String targetLevelName)
+    {
+        boolean result = false;
+        // Get markable that is required to be in some other markable
+        Markable currentMarkable = getMarkableLevelByName(ownLevelName,true).getMarkableByID(markableID);
+        // Get initial de of that
+        String initial = currentMarkable.getFragments()[0][0];
+        // Get all markables at this position
+        Markable[] allMarkables = getMarkableLevelByName(targetLevelName,true).getAllMarkablesAtDiscourseElement(initial, false);
+        // Iterate over allMarkables (only one has to be found to break)
+        for (int b=0;b<allMarkables.length;b++)
+        {
+            if (allMarkables[b].getSize() >=currentMarkable.getSize())
+            {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+        
+    public final boolean startsMarkableFromLevel(String markableID, String ownLevelName, String targetLevelName)
+    {
+        // NEW: 23. February 2005
+        Markable currentMarkable = getMarkableLevelByName(ownLevelName,true).getMarkableByID(markableID);
+        String initial = currentMarkable.getFragments()[0][0];
+        return getMarkableLevelByName(targetLevelName,true).hasMarkableStartingAt(initial);
+    }
+
+    public final boolean finishesMarkableFromLevel(String markableID, String ownLevelName, String targetLevelName)
+    {
+        // NEW: 23. February 2005
+        Markable currentMarkable = getMarkableLevelByName(ownLevelName,true).getMarkableByID(markableID);
+        String[][] fragments = currentMarkable.getFragments();
+        String[] finalFragment = fragments[fragments.length-1];
+        String currentMarkablesEnd = finalFragment[finalFragment.length-1];
+        return getMarkableLevelByName(targetLevelName,true).hasMarkableEndingAt(currentMarkablesEnd);
+    }
+    
+    public final String getNextFreeMarkableSetID()
+    {
+        String newID = "set_"+nextFreeMarkableSetNum+"";
+        nextFreeMarkableSetNum++;
+        return newID;
+    }
+
+    public final String getNextFreeMarkableID()
+    {
+        String newID = "markable_"+nextFreeMarkableIDNum+"";
+        nextFreeMarkableIDNum++;
+        return newID;
+    }
+    
+    public final MarkableLevel[] getMarkableLevels()
+    {
+        return this.orderedLevels;
+    }
+    
+    public final MarkableLevel[] getLevels()
+    {
+        return getMarkableLevels();
+    }
+    
+    
+    public final MarkableLevel[] getActiveLevels()
+    {
+        MarkableLevel[] result = new MarkableLevel[0];
+        ArrayList temp = new ArrayList();
+        for (int z=0;z<this.size;z++)
+        {
+            if (((MarkableLevel)this.orderedLevels[z]).getIsActive() && ((MarkableLevel)this.orderedLevels[z]).isDefined())
+            {
+                temp.add((MarkableLevel)this.orderedLevels[z]);
+            }
+        }
+        result = (MarkableLevel[]) temp.toArray(new MarkableLevel[0]);
+        return result;
+    }
+}
