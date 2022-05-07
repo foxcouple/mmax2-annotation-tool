@@ -1463,3 +1463,201 @@ public class MarkableChart
     public final void removeTargetMarkableFromMarkablePointer(Markable removee, MarkablePointer pointer, boolean refreshAttributeWindow)
     {
         Markable[] concerned = new Markable[2];
+        //Markable currentPrimary = currentDiscourse.getMMAX2().getCurrentPrimaryMarkable();
+        Markable currentSource = pointer.getSourceMarkable();
+        concerned[0] = removee;
+        concerned[1] = currentSource;        
+        MMAX2Document doc = this.orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+        doc.startChanges(concerned);
+        // Remove removee from markable pointer's target collection
+        pointer.removeTargetMarkable(removee);
+        // Render removee unselected 
+        removee.renderMe(MMAX2Constants.RENDER_UNSELECTED);
+
+        String constitutingAttributeName = pointer.getMarkableRelation().getAttributeName();
+        // Remove set_x value from markable
+        currentSource.setAttributeValue(constitutingAttributeName,pointer.getTargetSpan());
+        // ... and Element
+        ((Element)currentSource.getNodeRepresentation()).setAttribute(constitutingAttributeName,pointer.getTargetSpan());
+        
+        // Make attributewindow reflect the changes in the attributes
+        if (currentSource == currentDiscourse.getMMAX2().getCurrentPrimaryMarkable() && refreshAttributeWindow)
+        {
+            this.attributePanelContainer.displayMarkableAttributes(currentSource);        
+        }
+        
+        if (pointer.getSize()==0)
+        {
+            System.err.println("The last element from pointer is removed, pointer is destroyed!");
+            // The second but last element has been removed, so the set ceases to exist            
+            Markable last = pointer.getSourceMarkable();
+            //System.out.println(last);
+            pointer.removeMeFromMarkableRelation();
+            currentDiscourse.getMMAX2().removeFromRenderingList(pointer);
+            pointer=null;                 
+            // Remove set-dependent highlighting from last markable in set. This may remove _underlying_ highlighting as well!
+            // Replace with standard unselection highlighting            
+            if (last == currentDiscourse.getMMAX2().getCurrentPrimaryMarkable()) 
+            {
+                currentDiscourse.getMMAX2().getCurrentPrimaryMarkable().renderMe(MMAX2Constants.RENDER_SELECTED);            
+            }
+            else
+            {
+                last.renderMe(MMAX2Constants.RENDER_UNSELECTED);    
+            }
+        }
+        else
+        {
+            // The set is smaller now, so recalculate extent
+            pointer.updateLinePoints();
+        }
+        // Force display to also redraw background of markables with next refresh, thus restoring any highlighting that may be missing
+        currentDiscourse.getMMAX2().setRedrawAllOnNextRefresh(true);
+        // Make sure the display reflects the new state
+        currentDiscourse.getMMAX2().getCurrentViewport().repaint();
+        currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();
+        doc.commitChanges();
+        currentSource.getMarkableLevel().setIsDirty(true,false);        
+    }
+    
+    public final void removeMarkableFromMarkableSet(Markable removee, MarkableSet set, boolean refreshAttributeWindow)//, String constitutingAttribute)
+    {        
+    	System.err.println("Removing");
+        Markable[] concerned = new Markable[2];
+        Markable currentPrimary = currentDiscourse.getMMAX2().getCurrentPrimaryMarkable();
+        concerned[0] = removee;
+        concerned[1] = currentPrimary;
+        
+        String constitutingAttribute = set.getMarkableRelation().getAttributeName();
+        MMAX2Document doc = this.orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+        doc.startChanges(concerned);
+        
+        // Remove markable from set's markable collection. This may render the set to have only one element!
+        set.removeMarkable(removee);
+        // Remove set_x value from markable
+        //removee.removeAttribute(constitutingAttribute);
+        removee.setAttributeValue(constitutingAttribute, MMAX2.defaultRelationValue);
+        // ... and Element, _before_ rerendering !!
+        //((Element)removee.getNodeRepresentation()).removeAttribute(constitutingAttribute);
+        ((Element)removee.getNodeRepresentation()).setAttribute(constitutingAttribute,MMAX2.defaultRelationValue);
+        // Remove set-dependent highlighting from markable just removed.
+        removee.renderMe(MMAX2Constants.RENDER_UNSELECTED);
+
+        if (set.getSize()==1)
+        {           
+            System.err.println("The second but last element is removed, set is destroyed!");
+            // The second but last element has been removed, so the set ceases to exist            
+            Markable last = set.getInitialMarkable();
+            System.err.println("Last "+last.toString());
+            doc.startChanges(last);
+            
+            set.removeMeFromMarkableRelation();
+            currentDiscourse.getMMAX2().removeFromRenderingList(set);
+            set=null;                 
+            // Remove set_x value from markable
+            last.setAttributeValue(constitutingAttribute,MMAX2.defaultRelationValue);
+            // ... and Element
+            ((Element)last.getNodeRepresentation()).setAttribute(constitutingAttribute,MMAX2.defaultRelationValue);            
+            // Remove set-dependent highlighting from last markable in set. This may remove _underlying_ highlighting as well!
+            // Replace with standard unselection highlighting
+            last.renderMe(MMAX2Constants.RENDER_UNSELECTED);            
+            if (refreshAttributeWindow)
+            {
+                // Make attributewindow reflect the changes the attributes
+                attributePanelContainer.displayMarkableAttributes(currentPrimary);
+            }
+            if (last == currentPrimary) 
+            {
+                doc.startChanges(last);
+                currentPrimary.renderMe(MMAX2Constants.RENDER_SELECTED);
+                doc.commitChanges();
+            }
+            doc.commitChanges();
+            // TODO: revalidate attributes of last Markable in set, in case the set attrib was branching
+        }        
+        // Force display to also redraw background of markables with next refresh, thus restoring any highlighting that may be missing
+        currentDiscourse.getMMAX2().setRedrawAllOnNextRefresh(true);
+        // Make sure the display reflects the new state
+//        Graphics2D graphics = (Graphics2D) currentDiscourse.getMMAX2().getCurrentTextPane().getGraphics();        
+        currentDiscourse.getMMAX2().getCurrentViewport().repaint();
+        //set.refresh(graphics);
+        currentDiscourse.getMMAX2().redraw(null);
+        //currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();
+        doc.commitChanges();
+        removee.getMarkableLevel().setIsDirty(true,false);
+    }
+    
+    public final void mergeMarkableSetsIntoNewSet(MarkableSet oldSet)
+    {
+        String constitutingAttribute = oldSet.getMarkableRelation().getAttributeName();
+        // Get new for set to be created
+        String newSetID = getNextFreeMarkableSetID();
+        // Get current primary markable
+        Markable currentPrimary = currentDiscourse.getMMAX2().getCurrentPrimaryMarkable();
+        // Set attributes to markable and xml element 
+        currentPrimary.setAttributeValue(constitutingAttribute,newSetID);
+        ((Element)currentPrimary.getNodeRepresentation()).setAttribute(constitutingAttribute,newSetID);        
+        
+        // Create new set
+        MarkableSet newSet = oldSet.getMarkableRelation().addMarkableWithAttributeValueToMarkableSet(currentPrimary,newSetID);
+        // Merge new and old set
+        mergeMarkableSets(newSet, oldSet);
+        currentDiscourse.getMMAX2().putOnRenderingList(newSet);
+        currentPrimary.renderMe(MMAX2Constants.RENDER_SELECTED);        
+        // Force display to also redraw background of markables with next refresh, thus restoring any highlighting that may be missing
+        currentDiscourse.getMMAX2().setRedrawAllOnNextRefresh(true);
+        // Make sure the display reflects the new state
+        currentDiscourse.getMMAX2().getCurrentViewport().repaint();
+        currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();        
+    }
+    
+    public final void adoptMarkableToExistingMarkableSet(Markable adoptee, MarkableSet oldSet, MarkableSet newSet)
+    {
+        removeMarkableFromMarkableSet(adoptee,oldSet,true);
+        addMarkableToExistingMarkableSet(adoptee,newSet,true);
+    }
+    
+    public final void adoptMarkableToNewMarkableSet(Markable adoptee, MarkableSet oldSet)
+    {
+        removeMarkableFromMarkableSet(adoptee,oldSet,true);
+        addMarkableToNewMarkableSet(adoptee, oldSet.getMarkableRelation());
+    }
+    
+    public final void mergeMarkableSets(MarkableSet finalSet, MarkableSet oldSet)
+    {
+        //ArrayList movers = (ArrayList)java.util.Arrays.asList(oldSet.getOrderedMarkables());
+        ArrayList movers = new ArrayList(java.util.Arrays.asList(oldSet.getOrderedMarkables()));
+        int u=0;
+        for (u=0;u<movers.size()-1;u++)
+        {
+            removeMarkableFromMarkableSet(((Markable)movers.get(u)),oldSet,true);
+            addMarkableToExistingMarkableSet(((Markable)movers.get(u)), finalSet,true);
+        }
+        addMarkableToExistingMarkableSet(((Markable)movers.get(u)), finalSet,true);
+    }
+    
+    
+    public final void addTargetMarkableToNewMarkablePointer(Markable source, Markable target, MarkableRelation relation)
+    {
+        // Get name of MARKABLE_POINTER attribute
+        String constitutingAttribute = relation.getAttributeName();
+        
+        // Create MarkablePointer object in MarkableRelation
+        relation.createMarkablePointer(source,target);
+
+        MMAX2Document doc = orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+        doc.startChanges(target);
+        target.renderMe(MMAX2Constants.RENDER_IN_SET);
+        // Get reference to newly created MarkablePointer object
+        MarkablePointer pointer = relation.getMarkablePointerForSourceMarkable(source);        
+        
+        // Set value of this to (list of) id(s) of satellite markable(s) in MarkablePointer
+        source.setAttributeValue(constitutingAttribute,pointer.getTargetSpan());
+        // ... and in element
+        ((Element)source.getNodeRepresentation()).setAttribute(constitutingAttribute,pointer.getTargetSpan());
+
+        currentDiscourse.getMMAX2().setRedrawAllOnNextRefresh(true);
+        source.renderMe(MMAX2Constants.RENDER_SELECTED);
+        
+        currentDiscourse.getMMAX2().getCurrentViewport().repaint();
+        currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();
