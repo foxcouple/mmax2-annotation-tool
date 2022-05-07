@@ -299,3 +299,166 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
         
         saveMenuItem = new JMenuItem(markableLevelName);
         saveMenuItem.setFont(MMAX2.getStandardFont());
+        saveMenuItem.addActionListener(this);
+        saveMenuItem.setActionCommand("save_this_level");
+        saveMenuItem.setEnabled(false);                      
+    }
+    
+    public boolean isVerbose()
+    {
+    	return VERBOSE;
+    }
+
+    public boolean isDebug()
+    {
+    	return DEBUG;
+    }
+    
+    
+/*    
+    public HashSet getAllUIMATypeMappings()
+    {
+    	// Get mappings for all attributes in this level first
+    	HashSet result = annotationscheme.getAllUIMAAttributeMappings();
+    	// Add level-level mapping as well
+    	if (uimaTypeMapping != null)
+    	{
+    		result.add(uimaTypeMapping);
+    	}
+    	return result;
+    }
+*/    
+    public final boolean getIsReadOnly()
+    {
+        return readOnly;
+    }
+    
+    public final void setIsReadOnly(boolean status)
+    {
+    	System.err.println("Setting readOnly to "+status+" for level"+this.getMarkableLevelName());
+        readOnly = status;
+        
+    }    
+    
+    public final UIMATypeMapping getUIMATypeMapping()
+    {
+    	return annotationscheme.getUIMATypeMapping();
+    }
+
+    
+    public final String getCustomizationFileName()
+    {
+        return customizationFileName;
+    }
+    
+    public final MMAX2AnnotationScheme updateAnnotationScheme()
+    {
+        String temp = annotationscheme.getSchemeFileName();
+        annotationscheme=null;
+        annotationscheme = new MMAX2AnnotationScheme(temp);
+        annotationscheme.setMMAX2(mmax2);
+        return annotationscheme;        
+    }
+    
+    public final void setMMAX2(MMAX2 _mmax2)
+    {
+        mmax2 = _mmax2;
+        annotationscheme.setMMAX2(_mmax2);
+    }
+    
+    public final boolean isDefined()
+    {
+        return markableDOM != null;
+    }
+    
+    public final JMenuItem getSaveMarkableLevelItem()
+    {
+        return saveMenuItem;
+    }
+    
+    public final boolean hasMarkableStartingAt(String deID)
+    {
+        return (startedMarkablesAtDiscourseElement.get(deID)!=null);
+    }
+
+    public final boolean hasMarkableEndingAt(String deID)
+    {        
+        return (endedMarkablesAtDiscourseElement.get(deID)!=null);
+    }
+
+    public final Markable getMarkableAtSpan(String span)
+    {
+        Markable result = null;
+        Iterator allMarkables = markableHash.values().iterator();
+        while (allMarkables.hasNext())
+        {
+            Markable temp =(Markable) allMarkables.next();
+            if (span.equalsIgnoreCase(MarkableHelper.getSpan(temp)))
+            {
+                result = temp;
+                break;
+            }
+        }                
+        return result;
+    }
+    
+    
+    public final void setIsDirty(boolean status, boolean refresh)
+    {        
+        if (dirty != status)
+        {
+            dirty = status;        
+            if (isVerbose()) System.err.println("MarkableLevel "+markableLevelName+" set to dirty="+status);
+            if (currentDiscourse.getHasGUI()) { saveMenuItem.setEnabled(status); }
+        }
+        else
+        {
+            // The status to be set was already active
+        }
+        
+        if (getCurrentDiscourse()!=null && getCurrentDiscourse().getMMAX2() != null)
+        {
+            if (currentDiscourse.getHasGUI())
+            {
+                getCurrentDiscourse().getMMAX2().updateIsAnnotationModified();
+            }
+        }
+        
+        if (currentDiscourse.getHasGUI())
+        {
+            ArrayList<?> activeBrowsers = null;
+            if (refresh)
+            {
+                // New: check for and update currently active markable browsers
+                activeBrowsers = getCurrentDiscourse().getMMAX2().getMarkableBrowsersForMarkableLevel(markableLevelName);
+                for (int z=0;z<activeBrowsers.size();z++)
+                {
+                    ((MMAX2MarkableBrowser)activeBrowsers.get(z)).refresh();
+                }                
+            }
+            if (getCurrentDiscourse().getMMAX2() != null)
+            {
+                activeBrowsers = getCurrentDiscourse().getMMAX2().getMarkableSetBrowsersForMarkableLevel(markableLevelName);
+                for (int z=0;z<activeBrowsers.size();z++)
+                {
+                    ((MMAX2MarkableSetBrowser)activeBrowsers.get(z)).update();//IfDisplaying(markableLevelName, affectedAttribute);
+                }
+            }
+            if (getCurrentDiscourse().getMMAX2() != null)
+            {
+                activeBrowsers = getCurrentDiscourse().getMMAX2().getMarkablePointerBrowsersForMarkableLevel(markableLevelName);
+                for (int z=0;z<activeBrowsers.size();z++)
+                {
+                    ((MMAX2MarkablePointerBrowser)activeBrowsers.get(z)).update();//IfDisplaying(markableLevelName, affectedAttribute);
+                }
+            }
+            
+        }        
+    }
+    
+    public final boolean getIsDirty()
+    {
+        return dirty;
+    }
+    
+    
