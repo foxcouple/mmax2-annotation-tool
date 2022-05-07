@@ -1263,3 +1263,203 @@ public class MarkableChart
         }
         else if (primaryMarkable == secondaryMarkable)
         {
+            if (oneClickSelector != null)
+            {
+                // Reset any old oneClickSelector that might be around
+                oneClickSelector = null;
+            }
+            
+            oneClickSelector = primaryMarkable.getMarkableLevel().createOneClickAnnotationSelector(primaryMarkable, this, displayPos);
+            if (oneClickSelector != null)
+            {                
+                MMAX2 mmax2 = currentDiscourse.getMMAX2();
+                // Some action is possible, so show selector
+                int xPos = mmax2.getCurrentTextPane().getCurrentMouseMoveEvent().getX();              
+                int yPos = mmax2.getCurrentTextPane().getCurrentMouseMoveEvent().getY();
+                int currentScreenWidth = mmax2.getScreenWidth();
+                int selectorWidth = oneClickSelector.getWidth();
+                if ((xPos+mmax2.getX()) > currentScreenWidth/2)
+                {
+                    xPos = xPos-selectorWidth;
+                }
+                oneClickSelector.show(mmax2.getCurrentTextPane(),xPos,yPos );    
+                mmax2.getCurrentTextPane().startAutoRefresh();
+            }
+            else
+            {
+                // Current primary and secondary are non-null, and no oneClickSelector is available
+                selector = new MMAX2ActionSelector(secondaryMarkable, primaryMarkable, this,false);                
+            }
+            //String currentOneClickAttributeForLevel = primaryMarkable.getMarkableLevel().getCurrentOneClickAttributeName
+        }
+        if (selector != null && !selector.isEmpty())
+        {
+            MMAX2 mmax2 = this.currentDiscourse.getMMAX2();
+            // Some action is possible, so show selector
+            int xPos = mmax2.getCurrentTextPane().getCurrentMouseMoveEvent().getX();              
+            int yPos = mmax2.getCurrentTextPane().getCurrentMouseMoveEvent().getY();
+            int currentScreenWidth = mmax2.getScreenWidth();
+            int selectorWidth = selector.getWidth();
+            if ((xPos+mmax2.getX()) > currentScreenWidth/2)
+            {
+                xPos = xPos-selectorWidth;
+            }
+            selector.show(mmax2.getCurrentTextPane(),xPos,yPos );    
+            mmax2.getCurrentTextPane().startAutoRefresh();
+        }
+        secondaryMarkable.renderMe(MMAX2Constants.RENDER_NO_HANDLES);
+    }
+    
+    /** This method is called by the display caret listener whenever a markable is left-clicked. */
+    public final void markableLeftClicked(Markable newClicked)
+    {
+        // A Markable has been left-clicked. This selects a new primary markable, and resets an existing secondary markable. 
+        // Maximally two Markables are concerned: newClicked and currentPrimary
+        Markable[] concerned = new Markable[2];
+        // The first one is the newly selected one
+        concerned[0] = newClicked;
+        // Get reference to document, via some arbitrary MarkableLevel object 
+        MMAX2Document doc = orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+        // Get reference to currentPrimaryMarkable (if any)
+        Markable oldClicked = currentDiscourse.getMMAX2().getCurrentPrimaryMarkable();
+        concerned[1] = oldClicked;
+        // If newClicked was selecdted via its handles, these handles may still be highlighted
+        // Remove highlighting before startChanges()
+        newClicked.renderMe(MMAX2Constants.RENDER_NO_HANDLES);
+        // Start new session of display changes
+        doc.startChanges(concerned);
+        
+        // Reset old currentPrimaryMarkable, if any
+        if (oldClicked != null) 
+        {
+            oldClicked.getMarkableLevel().setValidateButtonEnabled(true);
+            oldClicked.renderMe(MMAX2Constants.RENDER_UNSELECTED);
+            // Remove all lines from the display
+            currentDiscourse.getMMAX2().emptyRenderingList();
+            if (currentDiscourse.getMMAX2().getIsRendering())
+            {
+                currentDiscourse.getMMAX2().setRedrawAllOnNextRefresh(true);
+                currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();
+            }            
+        }
+        newClicked.getMarkableLevel().setValidateButtonEnabled(false);
+        // Reset secondary Markable, if any
+        currentDiscourse.getMMAX2().setCurrentSecondaryMarkable(null);
+        // Set newly clicked Markable as new currentPrimaryMarkable
+        currentDiscourse.getMMAX2().setCurrentPrimaryMarkable(newClicked);
+        // Set 'selected' attributes to newly clicked Markable
+        newClicked.renderMe(MMAX2Constants.RENDER_SELECTED);
+        doc.commitChanges();
+        
+        attributePanelContainer.displayMarkableAttributes(newClicked);
+    }
+    
+    public final void nothingClicked(int currentButton)
+    {        
+        Markable[] concerned = new Markable[1];
+        if (orderedLevels.length > 0)
+        {
+            MMAX2Document doc = this.orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+            // Get reference to currentPrimaryMarkable (if any)
+            Markable oldClicked = currentDiscourse.getMMAX2().getCurrentPrimaryMarkable();
+            concerned[0] = oldClicked;
+            doc.startChanges(concerned);
+
+            // Reset old currentPrimaryMarkable
+            if (oldClicked != null) 
+            {
+                oldClicked.getMarkableLevel().setValidateButtonEnabled(true);
+                oldClicked.renderMe(MMAX2Constants.RENDER_UNSELECTED);
+            }
+            // Set nothing selected 
+            currentDiscourse.getMMAX2().setCurrentPrimaryMarkable(null);                
+            currentDiscourse.getMMAX2().setCurrentSecondaryMarkable(null);                
+            currentDiscourse.getMMAX2().emptyRenderingList();
+            doc.commitChanges();
+            if (currentDiscourse.getMMAX2().getIsRendering())
+            {
+                currentDiscourse.getMMAX2().setRedrawAllOnNextRefresh(true);
+                currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();
+            }
+            attributePanelContainer.displayMarkableAttributes(null);
+        }
+        if (currentButton == MMAX2Constants.RIGHTMOUSE)
+        {
+            final MMAX2QueryWindow qw = this.getCurrentDiscourse().getMMAX2().getMMAX2QueryWindow();
+            if (qw != null && qw.isResultAvailable())
+            {
+                JPopupMenu menu = new JPopupMenu();
+                JMenuItem item = new JMenuItem("Previous match");
+                if (qw.isPreviousResultAvailable()==false)
+                {
+                    item.setEnabled(false);
+                }
+
+                item.setFont(MMAX2.getStandardFont());
+                item.addActionListener(new ActionListener()
+                {
+                    public void actionPerformed(java.awt.event.ActionEvent ae)
+                    {
+                        qw.moveToPreviousLineInResult();        
+                    }            
+                });
+                menu.add(item);
+                item = null;
+                item = new JMenuItem("Next match");
+                if (qw.isNextResultAvailable()==false)
+                {
+                    item.setEnabled(false);
+                }
+                item.setFont(MMAX2.getStandardFont());
+                item.addActionListener(new ActionListener()
+                {
+                    public void actionPerformed(java.awt.event.ActionEvent ae)
+                    {
+                        qw.moveToNextLineInResult();        
+                    }            
+                });
+                menu.add(item);     
+                int x = getCurrentDiscourse().getMMAX2().getCurrentTextPane().getCurrentMouseMoveEvent().getX();
+                int y = getCurrentDiscourse().getMMAX2().getCurrentTextPane().getCurrentMouseMoveEvent().getY();                
+                JViewport view = getCurrentDiscourse().getMMAX2().getCurrentViewport();
+                
+                Point p = view.getViewPosition();
+                menu.show(getCurrentDiscourse().getMMAX2(),x-p.x,(y-p.y)+10);
+            }
+        }        
+    }
+    
+    public final void rerender()
+    {
+        if (orderedLevels.length > 0)
+        {
+            orderedLevels[0].getRenderer().render(null,MMAX2Constants.RERENDER_EVERYTHING);
+        }
+        if (currentDiscourse.getMMAX2().getCurrentPrimaryMarkable() != null)
+        {
+            markableLeftClicked(currentDiscourse.getMMAX2().getCurrentPrimaryMarkable());
+        }
+    }        
+    
+    public final String getLevelNameByOrderPosition(int pos)
+    {
+        return ((MarkableLevel)orderedLevels[pos]).getMarkableLevelName();
+    }
+    
+    public final void removeMarkablePointerWithSourceMarkable(Markable sourceMarkable, MarkableRelation relation, boolean refreshAttributeWindow )
+    {
+        // Get MarkablePointer with source markable        
+        MarkablePointer pointer = relation.getMarkablePointerForSourceMarkable(sourceMarkable);
+        // Get all targets
+        ArrayList<Markable> targets = (ArrayList<Markable>) java.util.Arrays.asList(pointer.getTargetMarkables());
+        // Iterate over all targets backwards
+        for (int z=targets.size()-1;z>=0;z--)
+        {
+            // Remove each satellite individually. This will also remove the source finally
+            removeTargetMarkableFromMarkablePointer((Markable)targets.get(z), pointer, refreshAttributeWindow);
+        }
+    }
+    
+    public final void removeTargetMarkableFromMarkablePointer(Markable removee, MarkablePointer pointer, boolean refreshAttributeWindow)
+    {
+        Markable[] concerned = new Markable[2];
