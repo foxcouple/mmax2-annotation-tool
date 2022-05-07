@@ -1661,3 +1661,175 @@ public class MarkableChart
         
         currentDiscourse.getMMAX2().getCurrentViewport().repaint();
         currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();
+        doc.commitChanges();        
+        // Display markable's attributes
+        attributePanelContainer.displayMarkableAttributes(source);
+        source.getMarkableLevel().setIsDirty(true,false);
+    }
+
+    public final void addTargetMarkableToExistingMarkablePointer(Markable source, Markable target, MarkablePointer pointer)//MarkableRelation relation)
+    {
+        // Get name of MARKABLE_POINTER attribute
+        String constitutingAttribute = pointer.getMarkableRelation().getAttributeName();
+        
+        // Create MarkablePointer object in MarkableRelation
+
+        pointer.addTargetMarkable(target);
+        
+        MMAX2Document doc = orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+        doc.startChanges(target);
+        target.renderMe(MMAX2Constants.RENDER_IN_SET);
+        // Get reference to newly created MarkablePointer object
+        // MarkablePointer pointer = relation.getMarkablePointerForSourceMarkable(source);        
+        
+        // Set value of this to (list of) id(s) of satellite markable(s) in MarkablePointer
+        source.setAttributeValue(constitutingAttribute,pointer.getTargetSpan());
+        // ... and in element
+        ((Element)source.getNodeRepresentation()).setAttribute(constitutingAttribute,pointer.getTargetSpan());        
+        pointer.updateLinePoints();
+        
+        currentDiscourse.getMMAX2().setRedrawAllOnNextRefresh(true);
+        source.renderMe(MMAX2Constants.RENDER_SELECTED);        
+//        currentDiscourse.getMMAX2().putOnRenderingList(pointer);        
+        currentDiscourse.getMMAX2().getCurrentViewport().repaint();
+        currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();
+        doc.commitChanges();        
+        // Display markable's attributes
+        attributePanelContainer.displayMarkableAttributes(source);
+        source.getMarkableLevel().setIsDirty(true,false);
+    }
+    
+    
+    public final void addMarkableToExistingMarkableSet(Markable addee, MarkableSet set, boolean setRendered)
+    {
+        String constitutingAttribute = set.getMarkableRelation().getAttributeName();
+        // Add new markable to set
+        set.addMarkable(addee);
+        
+        MMAX2Document doc = this.orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+        doc.startChanges(addee);
+        
+        // Make addee member of set in terms of attributes
+        addee.setAttributeValue(constitutingAttribute,set.getAttributeValue());
+        ((Element)addee.getNodeRepresentation()).setAttribute(constitutingAttribute,set.getAttributeValue());
+        // Re-render after attribute change, to enforce customizazion-dependent attribute changes
+        if (setRendered)
+        {
+            addee.renderMe(MMAX2Constants.RENDER_IN_SET);
+        }
+        else
+        {
+            addee.renderMe(MMAX2Constants.RERENDER_THIS);
+        }
+        set.updateLinePoints(true);
+        
+        // Rerendering of current primary unnecessary, because the set existed already and no change can
+        // have happened
+        
+        // Init repaint to make new line visible
+        currentDiscourse.getMMAX2().getCurrentViewport().repaint();
+        currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();
+        doc.commitChanges();
+        addee.getMarkableLevel().setIsDirty(true,false);
+    }            
+    
+    public final void addMarkableToNewMarkableSet(Markable addee, MarkableRelation relation)
+    {
+        Markable[] concerned = new Markable[2];
+        Markable currentPrimary = currentDiscourse.getMMAX2().getCurrentPrimaryMarkable();
+        concerned[0] = addee;
+        MMAX2Document doc = this.orderedLevels[0].getCurrentDiscourse().getDisplayDocument();
+        doc.startChanges(concerned);
+        
+        // Create a new ID for the set to be created. This must be unique for all Levels (?)
+        String newSetID = getNextFreeMarkableSetID();
+        
+        // Create and add to a new set for primaryMarkable
+        relation.addMarkableWithAttributeValueToMarkableSet(currentPrimary,newSetID);
+        
+        // Set id of new set to current primary markable
+        currentPrimary.setAttributeValue(relation.getAttributeName(),newSetID);
+        ((Element)currentPrimary.getNodeRepresentation()).setAttribute(relation.getAttributeName(),newSetID);
+        // Make attributewindow reflect the changes in the attributes
+        attributePanelContainer.displayMarkableAttributes(currentPrimary);
+        
+        // Add addee to newly created set for primaryMarkable
+        relation.addMarkableWithAttributeValueToMarkableSet(addee,newSetID);        
+        addee.setAttributeValue(relation.getAttributeName(),newSetID);
+        ((Element)addee.getNodeRepresentation()).setAttribute(relation.getAttributeName(),newSetID);
+        addee.renderMe(MMAX2Constants.RENDER_IN_SET);        
+        
+        // Enforce customization-dependent attribs that may have become valid as a result of the set operation
+        currentPrimary.renderMe(MMAX2Constants.RENDER_SELECTED);
+
+        currentDiscourse.getMMAX2().getCurrentViewport().repaint();
+        currentDiscourse.getMMAX2().getCurrentTextPane().startAutoRefresh();
+        doc.commitChanges();        
+        addee.getMarkableLevel().setIsDirty(true,false);
+        MMAX2Attribute attrib = addee.getMarkableLevel().getCurrentAnnotationScheme().getUniqueAttributeByName("^"+relation.getAttributeName()+"$");
+        addee.getMarkableLevel().getCurrentAnnotationScheme().valueChanged(attrib,attrib,null,0,new ArrayList());
+    }
+        
+    
+    public final Markable requestCopyMarkableToLevel(Markable markableToCopy, String levelToCopyTo)
+    {
+        // Todo: Optionally check for duplicates 
+        MarkableLevel toAddTo = getMarkableLevelByName(levelToCopyTo, false);
+        Markable newM = toAddTo.addMarkable(markableToCopy.getFragments(), new HashMap());
+        if (getCurrentDiscourse().getMMAX2().getSelectAfterCreation())
+        {
+            markableLeftClicked(newM);
+        }
+        
+        return newM;
+    }
+    
+    public final void deleteMarkable(Markable deletee)
+    {
+        // Determine all Relations the deletee is part of 
+        MarkableLevel level = deletee.getMarkableLevel();
+        MarkableRelation[] relations = level.getActiveMarkableSetRelationsForMarkable(deletee);
+        for (int z=0;z<relations.length;z++)
+        {
+            String tempAttribute = ((MarkableRelation)relations[z]).getAttributeName();
+            MarkableSet tempSet = ((MarkableRelation)relations[z]).getMarkableSetWithAttributeValue(deletee.getAttributeValue(tempAttribute));
+            removeMarkableFromMarkableSet(deletee,tempSet,true);
+        }
+        
+        // Get MarkablePointers the current deletee is a target of 
+        ArrayList allMarkablePointers = getAllMarkablePointersForTargetMarkable(deletee);        
+        System.err.println("Found "+allMarkablePointers.size()+" pointers ");
+        for (int z=0;z<allMarkablePointers.size();z++)
+        {
+            MarkablePointer currentMP = (MarkablePointer) allMarkablePointers.get(z);
+            removeTargetMarkableFromMarkablePointer(deletee, currentMP,true);
+        }
+        
+        // Delete deletee proper
+        deletee.deleteMe();
+        level.setIsDirty(true,true);
+    }
+    
+    public final ArrayList getAllMarkablePointersForTargetMarkable(Markable target)
+    {
+        ArrayList result = new ArrayList();
+        // Iterate over all levels, because each can have a pointer to deletee
+        for (int z=0;z<orderedLevels.length;z++)
+        {
+            MarkableLevel currentLevel = orderedLevels[z];
+            // Collect from each level the MarkablePointers with satellite satellite
+            result.addAll(currentLevel.getMarkablePointersForTargetMarkable(target));
+        }
+        return result;
+    }
+     
+    public final boolean inMarkableFromLevel(String DE_ID, String targetLevelName)
+    {
+        boolean result = false;
+        // Get all markables at this position
+        Markable[] allMarkables = getMarkableLevelByName(targetLevelName,true).getAllMarkablesAtDiscourseElement(DE_ID, false);
+        if (allMarkables.length >0)
+        {
+            result = true;
+        }
+        return result;
