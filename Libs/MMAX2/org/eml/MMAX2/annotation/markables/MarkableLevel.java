@@ -111,3 +111,191 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
     /** Arrow for moving this layer down in the hierarchy, appearing in MarkableLayerControlPanel. */    
     private BasicArrowButton moveDown = null;
     
+    private HashMap<String, MarkableRelation> markableSetRelations = null;    
+    private HashMap<String, MarkableRelation> markablePointerRelations = null;
+    
+    private JButton updateCustomization = null;
+    private JButton validateButton = null;
+    private JButton deleteAllButton = null;
+    
+    private JCheckBox switchCustomizations = null;
+        
+    private MarkableLevelRenderer renderer = null;
+    
+    private JLabel nameLabel = null;
+    
+    private String matchableLevelName="";
+    private boolean hasHandles = false;   
+    private MMAX2AnnotationScheme annotationscheme = null;
+        
+    private MMAX2 mmax2 = null;
+    private boolean dirty = false;
+    
+    private JMenuItem saveMenuItem = null;
+    
+    private String customizationFileName="";
+    
+    private boolean readOnly = false;
+    
+    boolean VERBOSE = false;
+    boolean DEBUG = false;
+    boolean PURGE_SINGLETON_SETS = true; 
+    
+    /** Creates new MarkableLevel */
+    public MarkableLevel(DocumentImpl _markableDOM, String _markableFileName, String _markableLevelName, MMAX2AnnotationScheme _scheme, String _customizationFileName)
+    {                        
+    	try { if (System.getProperty("verbose").equalsIgnoreCase("true")) {VERBOSE = true;} }
+    	catch (java.lang.NullPointerException x) { }
+
+    	try { if (System.getProperty("debug").equalsIgnoreCase("true")) {DEBUG = true;} }
+    	catch (java.lang.NullPointerException x) { }
+
+    	try { if (System.getProperty("purge_singleton_sets").equalsIgnoreCase("false")) {PURGE_SINGLETON_SETS = false;} }
+    	catch (java.lang.NullPointerException x) { }
+    	    	
+        customizationFileName=_customizationFileName;
+        // ??
+        matchableLevelName=","+_markableLevelName.toLowerCase()+",";        
+         
+        if (_markableDOM != null)
+        {            
+            //encoding = _markableDOM.getInputEncoding();
+            //if (encoding == null)			 { encoding = "UTF-8"; }
+        	if (_markableDOM.getInputEncoding() != null)
+        	{
+        		encoding = _markableDOM.getInputEncoding();
+        	}
+            if (encoding.equals("")==false)	 { markableFileHeader="<?xml version=\"1.0\" encoding=\""+encoding+"\"?>"; }            
+            if (isDebug()) System.err.println("    Markable file header: "+markableFileHeader);
+            
+            markableDOM = _markableDOM;                   
+            // Check for name space availability
+            try
+            {
+                // New March 30, 2005: Check if xmlns is available at all            
+                if (markableDOM.getElementsByTagName("markables").item(0).getAttributes().getNamedItem("xmlns") == null)
+                {
+                    JOptionPane.showMessageDialog(null,"Missing name space declaration on markable level "+_markableLevelName+"!\nEvery markable level file MUST have a name space declaration!\nMarkables on this level will not work properly!\n\nPlease modify the file\n"+_markableFileName,"Missing name space declaration!",JOptionPane.ERROR_MESSAGE);
+                }
+            }
+            catch (java.lang.NullPointerException ex)
+            {
+            	String h = "Cannot access xmlns element in file "+_markableLevelName+"!\nProbably missing markables.dtd.";
+            	System.err.println(h);
+                JOptionPane.showMessageDialog(null,h,"Cannot access name space!",JOptionPane.ERROR_MESSAGE);
+            }
+
+            // Try to set name space
+            try										 	{ markableNameSpace = markableDOM.getElementsByTagName("markables").item(0).getAttributes().getNamedItem("xmlns").getNodeValue(); }
+            catch (java.lang.NullPointerException ex) 	{ }
+                            
+            // New March 30, 2005: Check if doctype is available at all            
+            if (markableDOM.getDoctype() == null)
+            {
+                JOptionPane.showMessageDialog(null,"Missing DOCTYPE declaration on markable level "+_markableLevelName+"!\nEvery markable level file MUST have a DOCTYPE declaration!\nMarkables on this level will not work properly!\n\nPlease modify the file\n"+_markableFileName,"Missing DOCTYPE declaration!",JOptionPane.ERROR_MESSAGE);
+            }
+            else
+            {            
+                if (markableDOM.getDoctype().getPublicId() != null) 		{ dtdReference = "<!DOCTYPE markables PUBLIC \""+markableDOM.getDoctype().getPublicId()+"\">"; }
+                else if (markableDOM.getDoctype().getSystemId() != null) 	{ dtdReference = "<!DOCTYPE markables SYSTEM \""+markableDOM.getDoctype().getSystemId()+"\">"; }
+            }
+        }
+        
+        markableFileName = _markableFileName;
+        markableLevelName = _markableLevelName;
+        annotationscheme = _scheme;
+        markablesAtDiscourseElement = new HashMap<String, Markable[]>();
+        startedMarkablesAtDiscourseElement = new HashMap<String, Markable[]>();
+        endedMarkablesAtDiscourseElement = new HashMap<String, Markable[]>();                   
+        markableSetRelations = new HashMap<String, MarkableRelation>();
+        markablePointerRelations = new HashMap<String, MarkableRelation>();        
+        
+        if (_markableLevelName.equalsIgnoreCase("internal_basedata_representation")) 
+        { 
+        	System.err.println("Level for internal_basedata_representation!");
+        	return; 
+        }
+        
+        renderer = new MarkableLevelRenderer(this, customizationFileName);
+        
+        // Init GUI elements
+        moveUp = new BasicArrowButton(SwingConstants.NORTH);
+        if (isDefined()==false) { moveUp.setEnabled(false); }
+        moveUp.addActionListener(this);
+        moveUp.setToolTipText("Move this level up in hierarchy");
+        moveDown = new BasicArrowButton(SwingConstants.SOUTH);
+        if (isDefined()==false) { moveDown.setEnabled(false); }        
+        moveDown.addActionListener(this);           
+        moveDown.setToolTipText("Move this level down in hierarchy");
+        
+        activatorComboBox = new JComboBox<String>();
+        activatorComboBox.setFont(activatorComboBox.getFont().deriveFont((float)10));
+        activatorComboBox.setBorder(new EmptyBorder(0,0,1,1));        
+        if (isDefined()==false) { activatorComboBox.setEnabled(false); }        
+        activatorComboBox.setToolTipText("Activate/hide/deactivate this level");
+        activatorComboBox.setActionCommand("activator");
+        // Each MarkableLayer is active by default;
+        active = true;
+        visible = true;
+        activatorComboBox.addItem("active");
+        activatorComboBox.addItem("visible");
+        activatorComboBox.addItem("inactive");
+        activatorComboBox.addActionListener(this);
+        
+        nameLabel = new JLabel(markableLevelName);
+        nameLabel.setOpaque(true);
+        // Set foregroundcolor only if it is not transparent, otherwise black will be used
+        if (renderer.getForegroundIsTransparent()==false) 	{ nameLabel.setForeground(renderer.getForegroundColor()); }
+        else 												{ nameLabel.setForeground(Color.black); }
+        
+        // If the background is transparent, set label background to white, which is transparent
+        if (renderer.getBackgroundIsTransparent()) 	{ nameLabel.setBackground(Color.white);}
+        else 										{ nameLabel.setBackground(renderer.getBackgroundColor()); }        
+        
+        updateCustomization = new JButton("Update");
+        updateCustomization.setFont(updateCustomization.getFont().deriveFont((float)10));
+        updateCustomization.setBorder(new EmptyBorder(0,0,1,1));        
+        updateCustomization.setActionCommand("update");
+        updateCustomization.addActionListener(this);        
+        if (customizationFileName.equals(""))
+        { updateCustomization.setEnabled(false); }
+        else
+        {   
+            updateCustomization.setEnabled(true);
+            updateCustomization.setToolTipText(customizationFileName);
+        }
+        
+        if (isDefined()==false) { updateCustomization.setEnabled(false); }
+                
+        validateButton = new JButton("Validate");
+        validateButton.setFont(validateButton.getFont().deriveFont((float)10));
+        validateButton.setBorder(new EmptyBorder(0,0,1,1));
+        
+        if (isDefined()==false) { validateButton.setEnabled(false); }
+        
+        validateButton.setActionCommand("validate");
+        validateButton.addActionListener(this);
+
+        deleteAllButton = new JButton("Delete");
+        deleteAllButton.setFont(deleteAllButton.getFont().deriveFont((float)10));
+        deleteAllButton.setBorder(new EmptyBorder(0,0,1,1));
+        
+        if (isDefined()==false) { deleteAllButton.setEnabled(false); }        
+        deleteAllButton.setActionCommand("delete_all");
+        deleteAllButton.addActionListener(this);        
+        
+        switchCustomizations = new JCheckBox("");
+        if (isDefined()==false) { switchCustomizations.setEnabled(false); }
+        switchCustomizations.setActionCommand("switch");
+        switchCustomizations.addActionListener(this);
+        switchCustomizations.setToolTipText("Activate / deactivate markable customization for this level");
+        if (customizationFileName.equals(""))
+        { switchCustomizations.setEnabled(false); }
+        else
+        {
+            switchCustomizations.setSelected(true);
+            renderer.updateSimpleMarkableCustomizations(true);
+        }
+        
+        saveMenuItem = new JMenuItem(markableLevelName);
+        saveMenuItem.setFont(MMAX2.getStandardFont());
