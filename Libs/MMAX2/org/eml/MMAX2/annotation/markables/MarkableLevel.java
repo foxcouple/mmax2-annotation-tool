@@ -860,3 +860,184 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
         
         
         // Get all Attributes of type MARKABLE_POINTER
+        currentAttributes = this.annotationscheme.getAttributesByType(AttributeAPI.MARKABLE_POINTER);
+        // Iterate over all Attributes of type MARKABLE_POINTER
+        for (int i=0;i<currentAttributes.length;i++)
+        {
+            // Get current Attribute, e.g. antecedent
+            currentAttribute = (MMAX2Attribute) currentAttributes[i];
+            currentAttributeName = currentAttribute.getDisplayName();
+            // Create one MarkableRelation for each Attribute of type MARKABLE_POINTER (always order, for now)
+            MarkableRelation newRelation = new MarkableRelation(currentAttributeName,currentAttribute.getType(),true, currentAttribute.getLineWidth(), currentAttribute.getLineColor(), currentAttribute.getLineStyle(),currentAttribute.getMaxSize(),currentAttribute.getIsDashed(), currentAttribute.getAttributeNameToShowInMarkablePointerFlag(), mmax2);
+            // Add newly created MarkableRelation to respective HashMap
+            markablePointerRelations.put(currentAttributeName,newRelation);
+            // Associate currentAttribute with pertaining MarkableRelation
+            currentAttribute.setMarkableRelation(newRelation);            
+            newRelation = null;
+        }
+        
+        // Iterate over all MarkablePointerRelations
+        allAttributeNames = markablePointerRelations.keySet().iterator();
+        while (allAttributeNames.hasNext())
+        {
+            MarkableRelation currentRelation = (MarkableRelation) markablePointerRelations.get((String)allAttributeNames.next());
+            currentAttributeName = currentRelation.getAttributeName();
+            
+            // Iterate over all Markables on this MarkableLevel
+            Set allMarkableIDsSet = markableHash.keySet();
+            Iterator it = allMarkableIDsSet.iterator();
+            while(it.hasNext())
+            {
+                // Get current Markable
+                currentMarkable = (Markable)markableHash.get(it.next());
+                // Try to retrieve value of current attribute from current markable, e.g. from member
+                currentValue = currentMarkable.getAttributeValue(currentAttributeName);
+                if (currentValue != null && currentValue.equals("")==false && currentValue.equals(MMAX2.defaultRelationValue)==false)
+                {
+                    // The current Markable has a non-empty value for the current attribute, so add current markable to Relation for this attribute
+                    currentRelation.createMarkablePointer(currentMarkable,this);
+                }
+            }
+        }// for all attributes        
+    }
+    
+    public final MarkableRelation[] getActiveMarkableSetRelationsForMarkable(Markable markable)
+    {
+        ArrayList templist = new ArrayList();
+        MarkableRelation[] result = new MarkableRelation[0];
+        Iterator allAttributeNames = markableSetRelations.keySet().iterator(); // slow
+        while (allAttributeNames.hasNext())
+        {
+            MarkableRelation currentRelation = (MarkableRelation) markableSetRelations.get((String)allAttributeNames.next());
+            String currentAttributeName = currentRelation.getAttributeName();
+            // Todo: Optimize acces to getAttributeValue!
+            if (markable.getAttributeValue(currentAttributeName)!=null && markable.getAttributeValue(currentAttributeName).equals("")==false && markable.getAttributeValue(currentAttributeName).equals(MMAX2.defaultRelationValue)==false)
+            {
+                // The currentMarkable has a valid value for the current MarkableRelation
+                templist.add(currentRelation);
+            }
+        }
+        if (templist.size()!=0)
+        {
+            result = new MarkableRelation[templist.size()];
+            result = (MarkableRelation[]) templist.toArray(new MarkableRelation[1]);
+        }
+        return result;
+    }
+
+    public final MarkablePointer[] getActiveMarkablePointersForTargetMarkable(Markable markable, String pointerRelationName)
+    {
+        ArrayList templist = new ArrayList();
+        MarkablePointer[] result = null;
+        
+        // Get MarkablePointer of name pointerRelationName
+        MarkableRelation requiredPointerRelation = (MarkableRelation)markablePointerRelations.get(pointerRelationName);
+        // Get list of all MarkablePointers pointing to markable
+        templist = (ArrayList)Arrays.asList(requiredPointerRelation.getMarkablePointersWithTargetMarkable(markable));
+        
+        if (templist.size()!=0)
+        {
+            //result = new MarkableRelation[templist.size()];
+            result = (MarkablePointer[]) templist.toArray(new MarkablePointer[0]);
+        }
+        else
+        {
+            result = new MarkablePointer[0];
+        }
+        return result;        
+    }
+    
+    public final MarkableRelation[] getActiveMarkablePointerRelationsForSourceMarkable(Markable markable)
+    {
+        ArrayList templist = new ArrayList();
+        MarkableRelation[] result = new MarkableRelation[0];
+        Iterator allAttributeNames = markablePointerRelations.keySet().iterator();//slow
+        // Iterate over all pointer relations (by name)
+        while (allAttributeNames.hasNext())
+        {
+            // Get current MarkablePointerRelation
+            MarkableRelation currentRelation = (MarkableRelation) markablePointerRelations.get((String)allAttributeNames.next());
+            // Get attribute name associated with relation
+            String currentAttributeName = currentRelation.getAttributeName();
+            // Todo: Optimize access to getAttributeValue!
+            if (markable.getAttributeValue(currentAttributeName) !=null && 
+                markable.getAttributeValue(currentAttributeName).equals("")==false && 
+                markable.getAttributeValue(currentAttributeName).equals(MMAX2.defaultRelationValue)==false)
+            {
+                // The currentMarkable has a valid value for the current MarkableRelation
+                // So, it is the source markable os a pointer relation
+                templist.add(currentRelation);
+            }
+        }
+        if (templist.size()!=0)
+        {
+            result = new MarkableRelation[templist.size()];
+            result = (MarkableRelation[]) templist.toArray(new MarkableRelation[1]);
+        }
+        return result;
+    }
+
+    public final ArrayList getMarkablePointersForTargetMarkable(Markable markable)
+    {
+        ArrayList result = new ArrayList();
+        Iterator allAttributeNames = markablePointerRelations.keySet().iterator();//slow
+        while (allAttributeNames.hasNext())
+        {
+            // Get current MarkablePointerRelation
+            MarkableRelation currentRelation = (MarkableRelation) markablePointerRelations.get((String)allAttributeNames.next());
+            result.addAll(Arrays.asList(currentRelation.getMarkablePointersWithTargetMarkable(markable)));
+        }
+        return result;
+    }
+    
+    
+    public final void destroyDependentComponents()
+    {
+        // Iterate over all Markables on this MarkableLevel
+        Set allMarkableIDsSet = markableHash.keySet();
+        Iterator it = allMarkableIDsSet.iterator();
+        while(it.hasNext())
+        {
+            ((Markable)markableHash.get(it.next())).destroyDependentComponents();
+        }
+    
+        currentDiscourse = null;
+        markableDOM = null;
+        endedMarkablesAtDiscourseElement.clear();
+        endedMarkablesAtDiscourseElement = null;
+        startedMarkablesAtDiscourseElement.clear();
+        startedMarkablesAtDiscourseElement = null;
+        markableHash.clear();
+        markableHash = null;
+        markablesAtDiscourseElement.clear();
+        markablesAtDiscourseElement = null;        
+        markablesAtDiscoursePosition = null;
+        renderer.destroyDependentComponents();
+        renderer = null;
+        moveUp.removeActionListener(this);
+        moveUp = null;
+        moveDown.removeActionListener(this);
+        moveDown = null;
+        updateCustomization.removeActionListener(this);
+        updateCustomization = null;
+        activatorComboBox.removeActionListener(this);
+        activatorComboBox = null;
+        switchCustomizations.removeActionListener(this);
+        switchCustomizations = null;
+        markableSetRelations.clear();
+        markableSetRelations = null;
+        markablePointerRelations.clear();
+        markablePointerRelations = null;
+        annotationscheme.destroyDependentComponents();
+        annotationscheme = null;
+//        System.gc();        
+    }
+    
+    public final MMAX2AnnotationScheme getCurrentAnnotationScheme()
+    {
+        return this.annotationscheme;
+    }
+    
+    protected final void resetMarkablesForStyleSheetReapplication()
+    {
+        // TODO: reset this.markablesAtDiscoursePosition, because discourse positions may change as the result of style sheet reapplication
