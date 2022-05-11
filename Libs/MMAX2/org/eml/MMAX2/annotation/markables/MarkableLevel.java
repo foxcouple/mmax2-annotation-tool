@@ -1041,3 +1041,229 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
     protected final void resetMarkablesForStyleSheetReapplication()
     {
         // TODO: reset this.markablesAtDiscoursePosition, because discourse positions may change as the result of style sheet reapplication
+        // Iterate over all Markables on this MarkableLevel
+        Set allMarkableIDsSet = markableHash.keySet();
+        Iterator it = allMarkableIDsSet.iterator();
+        while(it.hasNext())        
+
+        {
+            ((Markable) markableHash.get(it.next())).resetHandles();
+        }
+    }
+    
+    /** This method returns the currently valid background color defined for DisplayPosition displayPosition. 
+        It is determined on the basis of the markable(s) this MarkableLayer has on this position. If no markables exist on this 
+        position, it is assumjed to be a MarkableHandle, and the color is determined ...*/
+    public final Color getBackgroundColorAtDisplayPosition(int displayPosition)
+    {
+        Color resultColor = null;
+        int discoursePosition = 0;
+        
+        Markable[] markablesAtDisplayPosition = getAllMarkablesAtDiscoursePosition(currentDiscourse.getDiscoursePositionAtDisplayPosition(displayPosition));
+        return resultColor;
+    }
+        
+    public final int getSize()
+    {
+        System.err.println("MarkableLevel.getSize() is deprecated! Use getMarkableCount() instead!");
+        return this.markableHash.size();
+    }
+
+    public final int getMarkableCount()
+    {
+        return this.markableHash.size();
+    }
+    
+    
+    public final JLabel getNameLabel()
+    {
+        return this.nameLabel;
+    }
+    
+    public final JComboBox getActivatorComboBox()
+    {
+        return activatorComboBox;
+    }
+
+    public final JCheckBox getSwitchCheckBox()
+    {
+        return this.switchCustomizations;
+    }
+    
+    public final BasicArrowButton getMoveUpButton()
+    {
+        return this.moveUp;
+    }
+
+    public final BasicArrowButton getMoveDownButton()
+    {
+        return this.moveDown;
+    }
+    
+    public final JButton getUpdateButton()
+    {
+        return this.updateCustomization;
+    }
+   
+    public final JButton getValidateButton()
+    {
+        return validateButton;
+    }
+
+    public final JButton getDeleteButton()
+    {
+        return deleteAllButton;
+    }
+    
+    public final void setPosition(int pos)
+    {        
+        position = pos;
+        moveUp.setActionCommand("up:"+pos);
+        moveDown.setActionCommand("down:"+pos);
+    }
+    
+    public final int getPosition()
+    {
+        return position;
+    }
+    
+    public final String getMarkableFileName()
+    {
+        return markableFileName;
+    }
+    
+    public final String getAbsoluteMarkableFileName()
+    {
+        File temp = new File(markableFileName);
+        return temp.getAbsolutePath();
+    }
+    
+    public final String getMarkableLevelName()
+    {
+        return markableLevelName;
+    }
+    
+    public final String getMatchableMarkableLevelName()
+    {
+        return matchableLevelName;
+    }
+    
+    public final MarkableLevelRenderer getRenderer()
+    {
+        return renderer;
+    }
+    
+    public final boolean getIsActive()
+    {
+        return active;
+    }
+
+    public final boolean getIsVisible()
+    {
+        return visible;
+    }
+    
+    public final boolean getHasHandles()
+    {
+        return hasHandles;
+    }
+    
+    public final void setHasHandles(boolean status)
+    {
+        hasHandles = status;        
+    }
+    
+    /** Used by MMAX query. */
+    public final ArrayList getMarkablesMatchingAll(MMAX2MatchingCriterion criterion)
+    {
+        ArrayList resultList = new ArrayList();
+        if (markableLevelName.equalsIgnoreCase("internal_basedata_representation")==false)
+        {
+            Markable currentMarkable = null;
+            ArrayList list = new ArrayList(markableHash.values());
+            for (int t=0;t<list.size();t++)
+            {
+                currentMarkable = (Markable)list.get(t);
+                if (MarkableHelper.matchesAll(currentMarkable,criterion))
+                {
+                    resultList.add(currentMarkable);
+                }
+            }
+        }
+        else
+        {
+            MMAX2DiscourseElement currentDE = null;
+            ArrayList list = (ArrayList)java.util.Arrays.asList(getCurrentDiscourse().getDiscourseElements());
+            for (int t=0;t<list.size();t++)
+            {
+                currentDE = (MMAX2DiscourseElement)list.get(t);
+                if (MarkableHelper.matchesAll(currentDE, criterion))
+                {
+                    resultList.add(currentDE);
+                }
+            }                        
+        }
+        return resultList;
+    }
+    
+    /** Used by MMAX query. */
+    public final ArrayList getMarkablesMatchingAny(MMAX2MatchingCriterion criterion)
+    {        
+        ArrayList resultList = new ArrayList();
+        if (markableLevelName.equalsIgnoreCase("internal_basedata_representation")==false)
+        {
+            Markable currentMarkable = null;
+            ArrayList list = new ArrayList(markableHash.values());
+            for (int t=0;t<list.size();t++)
+            {
+                currentMarkable = (Markable)list.get(t);
+                if (MarkableHelper.matchesAny(currentMarkable, criterion))
+                {
+                    resultList.add(currentMarkable);
+                }
+            }
+        }
+        else
+        {
+            // This level is a de level!
+            MMAX2DiscourseElement currentDE = null;
+            ArrayList list = (ArrayList)java.util.Arrays.asList(getCurrentDiscourse().getDiscourseElements());
+            for (int t=0;t<list.size();t++)
+            {
+                currentDE = (MMAX2DiscourseElement)list.get(t);
+                if (MarkableHelper.matchesAny(currentDE, criterion))
+                {
+                    resultList.add(currentDE);
+                }
+            }            
+        }
+        return resultList;
+    }
+   
+    
+    public final ArrayList getMarkables()
+    {
+        return new ArrayList(markableHash.values());
+    }
+
+    public final ArrayList getMarkables(Comparator comp)
+    {
+        ArrayList temp =  new ArrayList(markableHash.values());
+        if (comp != null)
+        {
+            Markable[] tempArray =  (Markable[])temp.toArray(new Markable[0]);;
+            java.util.Arrays.sort(tempArray,comp);
+            temp =  new ArrayList(java.util.Arrays.asList(tempArray));
+        }
+        return temp;
+    }
+   
+    
+    public final ArrayList  getMatchingMarkables(String queryString)
+    {
+        MMAX2QueryTree tree = null;
+        try
+        {
+            tree = new MMAX2QueryTree(queryString, this);
+        }
+        catch (MMAX2QueryException ex)
