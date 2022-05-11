@@ -672,3 +672,191 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
     public final void saveMarkables(String newFileName)
     {
     	saveMarkables(newFileName, false);
+    }
+    
+    public final void saveMarkables(String newFileName, boolean autoSaveMode)
+    {
+        if (getIsDirty()==false)
+        {
+        	if (autoSaveMode) System.err.print("Auto-Save: ");
+            if (isVerbose()) System.err.println("Markable level "+getMarkableLevelName()+" is clean, not saving!");
+            return;
+        }
+        
+        if (getIsReadOnly()==true)
+        {
+        	if (autoSaveMode) { System.err.println("Auto-Save: "+"Markable level "+getMarkableLevelName()+" is READ-ONLY, not saving!");}
+        	else              { JOptionPane.showMessageDialog(null,"Markable level "+getMarkableLevelName()+" is READ-ONLY, not saving!","Save problem",JOptionPane.INFORMATION_MESSAGE); }
+            return;
+        }
+        
+        if (autoSaveMode) System.err.print("Auto-Save: ");
+        if (isVerbose()) System.err.println("Saving level "+getMarkableLevelName()+" ... ");
+        if (newFileName.equals("")==false){ markableFileName = newFileName; }
+                
+        /* Test file for existence */
+        File destinationFile = new File(markableFileName);
+        
+        if(destinationFile.exists())
+        {        	
+        	// The file does exist already
+        	// Since it exists but is read-only, it is protected and should not be writable
+            if (destinationFile.canWrite() == false)
+            {
+            	if (autoSaveMode) { System.err.println("Auto-Save: "+"Cannot save markables on level "+getMarkableLevelName()+"!'Write' not allowed!"); }
+            	else              { JOptionPane.showMessageDialog(null,"Cannot save markables on level "+getMarkableLevelName()+"!\n'Write' not allowed!","Save problem:"+markableFileName,JOptionPane.WARNING_MESSAGE);	 }                
+                return;
+            }
+        	
+            /* The file to be written is already existing and writable, so create backup copy first*/
+            /* This should be the normal case */
+        	// 
+            if (autoSaveMode && isVerbose()) System.err.print("Auto-Save: ");            
+            if (isVerbose()) System.err.println("Filename "+destinationFile.getAbsolutePath()+" exists, creating *timestamped* backup file!");
+            String timeStamp = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS").format(new Date());
+                        
+            File oldDestinationFile = new File(this.markableFileName +"."+timeStamp+".bak");
+            destinationFile.renameTo(oldDestinationFile);
+        }                   
+        
+	/* Write DOM to file */
+        if (autoSaveMode) System.err.print("Auto-Save: ");
+        System.err.println("Writing to file " + markableFileName);
+        
+        BufferedWriter fw = null;
+        try 							{ fw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(markableFileName),this.encoding)); }
+        catch (java.io.IOException ex)	{ ex.printStackTrace(); }
+        
+        String rootElement ="";
+        if (markableNameSpace.equals("")) { rootElement = "<markables>"; }
+        else { rootElement = "<markables xmlns=\""+markableNameSpace+"\">"; }
+                
+        try
+        {
+            fw.write(markableFileHeader+"\n"+dtdReference+"\n"+rootElement+"\n");
+            fw.flush();
+        }
+        catch (java.io.IOException ex)
+        {
+            System.out.println(ex.getMessage());
+        }
+        
+        Set<String> allMarkableIDsSet = this.markableHash.keySet();
+        if (isVerbose()) System.err.println("Saving "+allMarkableIDsSet.size()+" markables");
+        Iterator<String> allMarkableIDs = allMarkableIDsSet.iterator();
+        Markable currentMarkable = null;        
+        while(allMarkableIDs.hasNext())
+        {
+            currentMarkable = (Markable) markableHash.get(allMarkableIDs.next());
+            try
+            {
+                fw.write(MarkableHelper.toXMLElement(currentMarkable, getCurrentAnnotationScheme())+"\n");
+            }
+            catch (java.io.IOException ex) { System.err.println("Error saving "+(currentMarkable.getID())); }
+        }        
+        try
+        {
+            fw.write("</markables>");
+            fw.close();
+        }
+        catch (java.io.IOException ex) { System.err.println(ex.getMessage()); }        
+        setIsDirty(false,false);        
+    }
+               
+    
+    /** This method initializes one MarkableRelation object for each attribute of type MARKABLE_SET, MARKABLE_POINTER and SET_POINTER and
+     *  adds it to this MarkableLevel's MarkableRelations list. */
+    public final void initMarkableRelations(MMAX2 _mmax2)
+    {
+        MMAX2Attribute[] currentAttributes = null;
+        MMAX2Attribute currentAttribute = null;
+        Markable currentMarkable = null;
+        String currentAttributeName = null;
+        String currentValue = "";
+        
+        // Get all Attributes of type MARKABLE_SET
+        currentAttributes = annotationscheme.getAttributesByType(AttributeAPI.MARKABLE_SET);
+        // Iterate over all Attributes of type MARKABLE_SET
+        for (int i=0;i<currentAttributes.length;i++)
+        {
+            // Get current Attribute, e.g. member
+            currentAttribute = (MMAX2Attribute) currentAttributes[i];
+            currentAttributeName = currentAttribute.getDisplayName();
+            // Create one MarkableRelation for each Attribute of type MARKABLE_SET (always order, for now)
+            MarkableRelation newRelation = new MarkableRelation(currentAttributeName,
+            		currentAttribute.getType(),
+            		true, 
+            		currentAttribute.getLineWidth(), 
+            		currentAttribute.getLineColor(), 
+            		currentAttribute.getLineStyle(), 
+            		currentAttribute.getMaxSize(),
+            		currentAttribute.getIsDashed(), 
+            		currentAttribute.getAttributeNameToShowInMarkablePointerFlag(),
+            		_mmax2);
+
+            // Add newly created MarkableRelation to respective HashMap
+            markableSetRelations.put(currentAttributeName,newRelation);
+            // Associate currentAttribute with pertaining MarkableRelation
+            currentAttribute.setMarkableRelation(newRelation);
+            newRelation = null;
+        }
+                
+        // Iterate over all MarkableSetRelations
+        Iterator<String> allAttributeNames = markableSetRelations.keySet().iterator();
+        while (allAttributeNames.hasNext())
+        {
+            MarkableRelation currentRelation = (MarkableRelation) markableSetRelations.get((String)allAttributeNames.next());
+            currentAttributeName = currentRelation.getAttributeName();
+            
+            // Iterate over all Markables on this MarkableLevel
+            Set<String> allMarkableIDsSet = markableHash.keySet();
+            Iterator<String> it = allMarkableIDsSet.iterator();
+            while(it.hasNext())                
+            {
+                // Get current Markable
+                currentMarkable = (Markable)markableHash.get(it.next());
+                // Try to retrieve value of current attribute from current markable, e.g. from member
+                currentValue = currentMarkable.getAttributeValue(currentAttributeName);
+//            	System.err.println(currentValue);
+                if (currentValue != null && currentValue.equals("")==false && currentValue.equals(MMAX2.defaultRelationValue)==false)
+                {
+                    // The current Markable has a non-empty value for the current attribute, so add current markable to Relation for this attribute
+                    currentRelation.addMarkableWithAttributeValueToMarkableSet(currentMarkable,currentValue);
+                    // Determine numerical value of this set id
+                    int currentNum = MMAX2Utils.parseID(currentValue);
+                    if (this.currentDiscourse.getCurrentMarkableChart().getNextFreeMarkableSetNum() <= currentNum)
+                    {
+                        this.currentDiscourse.getCurrentMarkableChart().setNextFreeMarkableSetNum(currentNum+1);
+                    }
+                }
+            }
+        }// for all attributes
+        
+        
+        if (PURGE_SINGLETON_SETS)
+        {
+	        // Note: Some sets might be singletons if they were created / edited outside the tool
+	        // Iterate over all MarkableSetRelations again
+	        allAttributeNames = markableSetRelations.keySet().iterator();
+	        while (allAttributeNames.hasNext())
+	        {
+	            MarkableRelation currentRelation = (MarkableRelation) markableSetRelations.get((String)allAttributeNames.next());
+	        	System.err.println("\nNote: Purging singleton sets for attribute "+currentRelation.getAttributeName());
+	            MarkableSet[] sets = currentRelation.getMarkableSets(true);
+	            for (int m=0;m<sets.length;m++)
+	            {
+	            	MarkableSet set = sets[m];
+	            	if (set.getSize()==1)
+	            	{
+	            		Markable sm = set.getInitialMarkable();
+	            		System.err.println("\n"+sm);
+	            		sm.setAttributeValue(currentRelation.getAttributeName(), MMAX2.defaultRelationValue);
+	            		sm.setAttributeValueToNode(currentRelation.getAttributeName(), MMAX2.defaultRelationValue);
+	            		set.removeMeFromMarkableRelation();
+	            	}
+	            }	            
+	        }// for all attributes
+        }        
+        
+        
+        // Get all Attributes of type MARKABLE_POINTER
