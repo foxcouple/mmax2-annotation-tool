@@ -1267,3 +1267,224 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
             tree = new MMAX2QueryTree(queryString, this);
         }
         catch (MMAX2QueryException ex)
+        {
+        	ex.printStackTrace();
+            return new ArrayList();
+        }
+
+        if (tree != null)
+        {        
+            return tree.execute(new DiscourseOrderMarkableComparator());
+        }
+        else
+        {
+            return new ArrayList();
+        }
+    }
+    
+    public final void updateMarkables()
+    {        
+        startedMarkablesAtDiscourseElement = null;
+        startedMarkablesAtDiscourseElement = new HashMap();
+        endedMarkablesAtDiscourseElement = null;
+        endedMarkablesAtDiscourseElement = new HashMap();
+        
+        markablesAtDiscourseElement=null;
+        markablesAtDiscourseElement=new HashMap();       
+        
+        NodeList allMarkableNodes = markableDOM.getElementsByTagName("markable");
+        Node currentMarkableNode = null;
+        int len = allMarkableNodes.getLength();
+        
+        String currentID = "";
+        String currentSpan = "";
+        
+        Markable currentMarkable=null;
+        // Iterate over all Markable elements
+        for (int z=0;z<len;z++)
+        {
+            // Get current markable element
+            currentMarkableNode = allMarkableNodes.item(z);
+            currentID = currentMarkableNode.getAttributes().getNamedItem("id").getNodeValue();            
+
+            currentMarkable = getMarkableByID(currentID);
+
+            currentSpan = MarkableHelper.getSpan(currentMarkable);
+            currentMarkable.update(parseMarkableSpan(currentSpan, currentDiscourse.getWordDOM(),this));
+        }                
+    }
+    
+    /** This method is called from the MMAX2DiscourseLoader after the MMAX2Discourse field has been set
+        on this level. Markable spans are expanded on the basis of the element IDs actually
+        contained in the base data, and not by mere interpolation of integer IDs!         
+        Synopsis: This method basically iterates over all elements in this.markableDOM, creates a Markable object
+        for each by means of the Markable constructor, and adds that to this.markableHash.      
+     */
+    public final int createMarkables()
+    {        
+        boolean readOnlyAtStart=getIsReadOnly();        
+        int maxIDNum = 0;
+        boolean added = false;
+        if (isDefined())
+        {            
+            // Get list of all markable elements currently existing on this level. 
+        	// These were read from a markables file.
+        	// Markables might contain attributes that do not conform to anno scheme!!
+            NodeList allMarkableNodes = markableDOM.getElementsByTagName("markable");
+            Node currentMarkableNode = null;
+            int len = allMarkableNodes.getLength();        
+            markableHash = new HashMap<String, Markable>(len);            
+            String currentID = "";
+            int currentIDNum = 0;
+            String currentSpan = "";
+        
+            Markable newMarkable=null;
+            HashMap<String, String> attributes = null;
+            // Iterate over all Markable elements
+            for (int z=0;z<len;z++)
+            {
+                currentMarkableNode = allMarkableNodes.item(z);
+                if (currentMarkableNode.getAttributes().getNamedItem("mmax_level")==null)
+                {
+                    ((Element)currentMarkableNode).setAttribute("mmax_level",getMarkableLevelName());
+                    setIsDirty(true, false);
+                    // Remember that soth. was added
+                    added = true;
+                }
+                
+                // Create attributes HashMap for Markable object attributes.
+                // Attributes and values might come in any casing, and need to be normalized to their correct one
+                // System.err.println(currentMarkableNode.getAttributes());
+                attributes = MMAX2Utils.convertNodeMapToHashMap(currentMarkableNode.getAttributes(), this.getCurrentAnnotationScheme());
+                // 1.15: attributes and values are in canonical casing here (i.e. as defined in scheme)
+                
+                // Extract numerical part of current id
+                currentIDNum = MMAX2Utils.parseID((String)attributes.get("id"));
+                if (currentIDNum > maxIDNum) maxIDNum = currentIDNum;
+                // Remove id and span attributes.
+                attributes.remove("id");
+                attributes.remove("span");            
+                try { currentID = currentMarkableNode.getAttributes().getNamedItem("id").getNodeValue(); }
+                catch (java.lang.NullPointerException ex)
+                {
+                    JOptionPane.showMessageDialog(null,"Missing ID attribute on markable!","MarkableLevel: "+markableFileName,JOptionPane.ERROR_MESSAGE);                
+                }
+            
+                try { currentSpan = currentMarkableNode.getAttributes().getNamedItem("span").getNodeValue(); }
+                catch (java.lang.NullPointerException ex)
+                {
+                    JOptionPane.showMessageDialog(null,"Missing span attribute on markable!","MarkableLevel: "+markableFileName,JOptionPane.ERROR_MESSAGE);                                
+                }            
+
+                // Create new Markable object (not much will happen there)
+                // attributes hash has been normalized already. currentMarkableNode is still in the format read from the file. 
+                newMarkable = new Markable(currentMarkableNode, currentID, parseMarkableSpan(currentSpan,this.currentDiscourse.getWordDOM(),this), attributes,this);
+                
+                // Create mapping of Markable to its ID
+                markableHash.put(currentID, newMarkable);
+                newMarkable = null;            
+            }
+        }  
+        else { markableHash = new HashMap<String, Markable>(); }
+        
+        if (added)
+        {
+            if (getCurrentDiscourse().getHasGUI())
+            {
+                JOptionPane.showMessageDialog(null,"The attribute 'mmax_level' has been added to at least one markable on level "+getMarkableLevelName()+"!\nPlease make sure to save this level later.","Markable level has been modified!",JOptionPane.INFORMATION_MESSAGE);
+            }
+            else
+            {
+                System.err.println("The attribute 'mmax_level' has been added to at least one markable on level "+getMarkableLevelName()+"!");
+            }
+        }        
+        if (readOnlyAtStart == false && getIsReadOnly()) { System.err.println("Level "+getMarkableLevelName()+" has been set to read-only!"); }
+                
+        return maxIDNum;
+    }
+
+    public void setCurrentDiscourse(MMAX2Discourse _discourse)
+    {
+        currentDiscourse = _discourse;
+    }
+    
+    public MMAX2Discourse getCurrentDiscourse()
+    {
+        return currentDiscourse;
+    }        
+    
+    public Markable getMarkableByID(String markableId)
+    {
+        return (Markable) this.markableHash.get(markableId);
+    }
+
+    public final Markable[] getAllMarkablesStartingWith(MMAX2DiscourseElementSequence sequence)
+    {       
+        MMAX2DiscourseElement[] elements = sequence.getContent();
+        ArrayList temp = new ArrayList();
+        // Get disc pos of last element in sequence
+        int lastDiscPosInElements = elements[elements.length-1].getDiscoursePosition();
+        // Get all markables started by the first DE in parameter list
+        Markable[] started = getAllMarkablesStartedByDiscourseElement(elements[0].getID());
+        // Iterate over all markables started at first DE
+        for (int z=0;z<started.length;z++)
+        {
+            // Get final disc pos of current markable
+            int currentFinalDiscPos = started[z].getRightmostDiscoursePosition();
+            if (currentFinalDiscPos <= lastDiscPosInElements)
+            {
+                // Add it if it is earlier or equal
+                temp.add(started[z]);
+            }
+        }
+        return (Markable[]) temp.toArray(new Markable[0]);
+    }
+
+    public final Markable getSingleLongestMarkableStartingWith(MMAX2DiscourseElementSequence sequence)
+    {
+        Markable result = null;
+        Markable[] candidates = getAllMarkablesStartingWith(sequence);
+        if (candidates.length==1)
+        {
+            result = candidates[0];
+        }
+        else if (candidates.length > 0)
+        {
+            //java.util.Arrays.sort(candidates,new ShorterBeforeLongerComparator());
+            java.util.Arrays.sort(candidates,new DiscourseOrderMarkableComparator());
+            if (candidates[candidates.length-1].getSize() != candidates[candidates.length-2].getSize())
+            {
+                result = candidates[candidates.length-1];
+            }
+        }
+        if (result != null && result.getSize() < sequence.getLength())
+        {
+            result = null;
+        }            
+        return result;
+    }
+    
+    
+    /** This method returns an array of those Markable objects associated with discourseElement Id, or empty array if none. 
+        Since this is on MarkableLayer level, no distinction is made wrt to active/inactive. 
+        The retrieved Array comes from a hash, so this method is efficient (a little less so if sort==true,
+        which causes the markables to be sorted in discourse order, shorter before longer ones). */
+    public Markable[] getAllMarkablesAtDiscourseElement(String discourseElementId, boolean sort)
+    {
+        Markable[] result = (Markable[]) markablesAtDiscourseElement.get(discourseElementId);
+        if (result == null) result = new Markable[0];
+        if (sort)
+        {
+            Arrays.sort(result,getCurrentDiscourse().DISCOURSEORDERCOMP);
+        }
+        return result;
+    }
+
+    
+    /** This method returns an ArrayList of those Markable objects associated with discourseElement Id, or empty list if none. 
+        Since this is on MarkableLayer level, no distinction is made wrt to active/inactive. 
+        The retrieved Array comes from a hash, so this method is efficient (a little less so if sort==true,
+        which causes the markables to be sorted in discourse order, shorter after longer ones). */
+    public ArrayList getMarkablesAtDiscourseElementID(String discourseElementId, Comparator comp)
+    {
+        Markable[] result = (Markable[]) markablesAtDiscourseElement.get(discourseElementId);
