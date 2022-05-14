@@ -1488,3 +1488,197 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
     public ArrayList getMarkablesAtDiscourseElementID(String discourseElementId, Comparator comp)
     {
         Markable[] result = (Markable[]) markablesAtDiscourseElement.get(discourseElementId);
+        if (result == null) result = new Markable[0];       
+        if (comp != null)
+        {
+            Arrays.sort(result,comp);
+        }
+        return new ArrayList(java.util.Arrays.asList(result));
+    }
+    
+
+    /** This method returns an ArrayList of those Markable objects associated with discourseElement Id, or empty list if none. 
+        Since this is on MarkableLayer level, no distinction is made wrt to active/inactive. 
+        The retrieved Array comes from a hash, so this method is efficient (a little less so if sort==true,
+        which causes the markables to be sorted in discourse order, shorter after longer ones). */
+    public ArrayList getMarkablesAtDiscoursePosition(int discPos, Comparator comp)
+    {
+        String discourseElementId = getCurrentDiscourse().getDiscourseElementIDAtDiscoursePosition(discPos);
+        Markable[] result = (Markable[]) markablesAtDiscourseElement.get(discourseElementId);
+        if (result == null) result = new Markable[0];       
+        if (comp != null)
+        {
+            Arrays.sort(result,comp);
+        }
+        return new ArrayList(java.util.Arrays.asList(result));
+    }
+    
+    
+    /** This method returns an array of those Markable objects started at discourseElement Id, or empty array if none. 
+        Since this is on MarkableLayer level, no distinction is made wrt to active/inactive. */
+    public Markable[] getAllMarkablesStartedByDiscourseElement(String discourseElementId)
+    {
+        // TODO: Why not sort here??
+        Markable[] result = null;
+    	//System.err.println(discourseElementId);
+        result =  (Markable[]) startedMarkablesAtDiscourseElement.get(discourseElementId);
+        if (result == null) result = new Markable[0];
+        return result;
+    }
+    
+    public Markable getSingleMarkableExactlyAtDiscourseElement(String discourseElementId)
+    {
+        Markable result=null;
+        Markable[] started = getAllMarkablesStartedByDiscourseElement(discourseElementId);
+        Markable[] ended = getAllMarkablesEndedByDiscourseElement(discourseElementId);
+        ArrayList startedAsList = new ArrayList(java.util.Arrays.asList(started));
+        startedAsList.retainAll(java.util.Arrays.asList(ended));
+        if (startedAsList.size()==1)
+        {
+            result=(Markable)startedAsList.get(0);
+        }
+        return result;
+    }
+    
+    /** This method returns an array of those Markable objects ended at discourseElement Id, or empty array if none. 
+        Since this is on MarkableLayer level, no distinction is made wrt to active/inactive. */
+    public Markable[] getAllMarkablesEndedByDiscourseElement(String discourseElementId)
+    {
+        Markable[] result = null;
+        result = (Markable[]) endedMarkablesAtDiscourseElement.get(discourseElementId);
+        if (result == null) 
+        {
+            result = new Markable[0]; // un-uncommented Oct. 17
+        }
+        else
+        {
+            java.util.Arrays.sort(result,currentDiscourse.IDCOMP);
+            java.util.Arrays.sort(result,currentDiscourse.ENDCOMP);
+        }
+        return result;
+    }
+    
+    /** Main method for layer-wise retrieval of Markables from discourse positions. Returns empty Markable array if no 
+        Markables are found. Since this is on MarkableLayer level, no distinction is made wrt to active/inactive. */
+    public Markable[] getAllMarkablesAtDiscoursePosition(int pos)
+    {
+        return markablesAtDiscoursePosition[pos];
+    }
+    
+    /** This method updates a NodeSet of those Markables at the current MarkableLayer beginning at discourseElementId, with
+        longer Markables before shorter ones. Since this is on MarkableLayer level, no distinction is made wrt to active/inactive. */
+    public final void getAllStartedMarkablesAsNodes(String discourseElementId, NodeSet result)
+    {                       
+        // Get Array of Markables, or null if none 
+//        long time = System.currentTimeMillis();
+        Markable[] temp = getAllMarkablesStartedByDiscourseElement(discourseElementId);        
+        if (temp != null)
+        {
+            // Sort markables in discourse position order, 
+            // with longer before shorter ones (for embedding visualization) 
+            // TODO: Sort only once!
+            Arrays.sort(temp,getCurrentDiscourse().STARTCOMP);
+            // Add markables to node list in ordering sequence      
+            int len = temp.length;
+            for (int o=0;o<len;o++)
+            {                
+                result.addNode(temp[o].getNodeRepresentation());
+            }
+        }
+    }
+
+    
+    /** This method updates a NodeSet of those Markables at the current MarkableLayer ending at discourseElementId, with
+        shorter Markables before longer ones. Since this is on MarkableLayer level, no distinction is made wrt to active/inactive. */
+    public final void getAllEndedMarkablesAsNodes(String discourseElementId, NodeSet result)
+    {                
+        // Get Array of Markables, or null if none 
+        Markable[] temp = getAllMarkablesEndedByDiscourseElement(discourseElementId);
+        if (temp != null)
+        {
+            // Sort markables in rev discourse position order, 
+            // with shorter before longer ones (for embedding visualization) 
+            // TODO: Sort only once!
+            Arrays.sort(temp,getCurrentDiscourse().ENDCOMP);
+            // Add markables to node list in ordering sequence
+            int len = temp.length;
+            for (int o=0;o<len;o++)
+            {
+                result.addNode(temp[o].getNodeRepresentation());
+            }
+        }
+    }
+    
+       
+    public final void unregisterMarkable(Markable unregisteree)
+    {
+        String frags[][] = unregisteree.getFragments();
+        String[] currentFragment = null;
+        int singleFragments = frags.length;
+        for (int z=0;z<singleFragments;z++)
+        {
+            currentFragment = frags[z];
+            // Inform the current layer that Markable unregisteree does no longer start at its start position
+            unregisterMarkableAtStartOfFragment(unregisteree, currentFragment[0]);
+            // Inform the current layer that Markable unregisteree does no longer end at its end position
+            unregisterMarkableAtEndOfFragment(unregisteree, currentFragment[currentFragment.length-1]);
+            for (int o=0;o<currentFragment.length;o++)
+            {
+                // Remove mapping from each of unregisterees DEs. unregisteree will have NO mappings afterwards!!
+                unregisterMarkableAtDiscourseElement(unregisteree, currentFragment[o]);
+            }
+        }
+    }
+    
+    public final void unregisterMarkableAtDiscourseElement(Markable unregisteree, String de)
+    {
+        /** Get array of those markables associated as with discourseElement de. */
+        Markable[] markables = (Markable[]) getAllMarkablesAtDiscourseElement(de,false);
+        /** Create new array with one element less */
+        Markable[] newMapping = new Markable[markables.length-1];
+        int filler=0;
+        // Iterate over all markables still associated with de
+        for (int u=0;u<markables.length;u++)
+        {
+            if (markables[u]==unregisteree)
+            {
+                filler=1;
+                continue;
+            }
+            newMapping[u-filler]=markables[u];
+        }        
+        markablesAtDiscourseElement.remove(de);        
+        if (newMapping.length > 0)
+        {
+            markablesAtDiscourseElement.put(de,newMapping);                 
+        }
+        updateDiscoursePositionToMarkableMapping(de);
+    }
+    
+    public final void unregisterMarkableAtStartOfFragment(Markable unregisteree, String de)
+    {
+        /** Get array of those markables associated as starting with discourseElement de. */
+        Markable[] markables = (Markable[]) getAllMarkablesStartedByDiscourseElement(de);                
+        
+        /** Create new array with one element less */
+        Markable[] newMapping = new Markable[markables.length-1];
+        int filler=0;
+        // Iterate over all markables still associated with de
+        for (int u=0;u<markables.length;u++)
+        {
+            if (markables[u]==unregisteree)
+            {
+                filler=1;
+                continue;
+            }
+            newMapping[u-filler]=markables[u];
+        }        
+        startedMarkablesAtDiscourseElement.remove(de);        
+        if (newMapping.length > 0)
+        {
+            startedMarkablesAtDiscourseElement.put(de,newMapping);                 
+        }
+    }
+    
+    public final void unregisterMarkableAtEndOfFragment(Markable unregisteree, String de)
+    {
