@@ -1880,3 +1880,205 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
         {
             doit = true;
         }
+        
+        if (doit)
+        {
+            if (renderer.getForegroundIsTransparent()==false)                
+            {
+                HTMLText = "<html><font face=\"monospace\" color=\"" +MMAX2Utils.colorToHTML(renderer.getForegroundColor())+"\">";
+            }
+            else
+            {
+                HTMLText = "<html><font face=\"monospace\">";
+            }
+            if (this.getHasHandles())
+            {
+                HTMLText = HTMLText + "<font color=\""+MMAX2Utils.colorToHTML(renderer.getHandleColor())+"\"><b>[</b></font>";
+            }
+            if (renderer.getIsBold()) HTMLText = HTMLText+"<b>";
+            if (renderer.getIsItalic()) HTMLText = HTMLText +"<i>";
+            if (renderer.getIsSuperscript()) HTMLText = HTMLText + "<sup>";
+            if (renderer.getIsSubscript()) HTMLText = HTMLText + "<sub>";
+            if (renderer.getIsUnderline()) HTMLText = HTMLText + "<u>";
+            if (renderer.getIsStrikethrough()) HTMLText = HTMLText + "<strike>";
+            HTMLText = HTMLText+this.getMarkableLevelName();
+            if (renderer.getIsStrikethrough()) HTMLText = HTMLText + "</strike>";
+            if (renderer.getIsUnderline()) HTMLText = HTMLText + "</u>";
+            if (renderer.getIsSubscript()) HTMLText = HTMLText + "</sub>";
+            if (renderer.getIsSuperscript()) HTMLText = HTMLText + "</sup>";
+            if (renderer.getIsItalic()) HTMLText = HTMLText +"</i>";
+            if (renderer.getIsBold()) HTMLText = HTMLText+"</b>";
+            if (this.getHasHandles())
+            {
+                HTMLText = HTMLText + "<font color=\""+MMAX2Utils.colorToHTML(renderer.getHandleColor())+"\"><b>]</b></font>";
+            }
+
+            HTMLText=HTMLText+"<font></html>";
+            nameLabel.setText(HTMLText);
+            nameLabel.setOpaque(true);
+        }
+        else
+        {
+            nameLabel.setText(getMarkableLevelName());
+        }
+
+    }
+   
+    public void actionPerformed(java.awt.event.ActionEvent actionEvent) 
+    {        
+        String command = actionEvent.getActionCommand();
+        if (command.equals("activator"))
+        {
+            JComboBox control = (JComboBox)actionEvent.getSource();
+            String val = control.getSelectedItem().toString();
+            if (val.equalsIgnoreCase("inactive"))
+            {
+                setInactive();                
+            }
+            else if (val.equalsIgnoreCase("visible"))
+            {
+                setVisible();
+            }
+            else if (val.equalsIgnoreCase("active"))
+            {
+                setActive();                
+            }
+
+            if(getCurrentDiscourse().getMMAX2().getAutoRefreshUponPanelAction())
+            {
+                getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlWindow.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlPanel.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                getCurrentDiscourse().getCurrentMarkableChart().rerender();
+                getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlWindow.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                
+            }
+        }
+        else if (command.equals("update"))
+        {
+            getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlWindow.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+            getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlPanel.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+            renderer.updateSimpleMarkableCustomizations(true);
+            getCurrentDiscourse().getCurrentMarkableChart().rerender();
+            getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlWindow.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));            
+        }
+        else if (command.equals("switch"))
+        {
+            getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlWindow.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+            getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlPanel.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+            renderer.updateSimpleMarkableCustomizations(((JCheckBox)actionEvent.getSource()).isSelected());
+            updateCustomization.setEnabled(((JCheckBox)actionEvent.getSource()).isSelected());
+            getCurrentDiscourse().getCurrentMarkableChart().rerender();
+            getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlWindow.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));            
+        }
+        
+        else if (command.equals("validate"))
+        {
+            int result = JOptionPane.showConfirmDialog(null,"This will start the validation of "+getMarkableCount()+" markables!\nAre you sure?",getMarkableLevelName(),JOptionPane.YES_NO_OPTION);
+            if (result == JOptionPane.YES_OPTION)
+            {
+                validate();
+            }
+        }
+        else if (command.equals("delete_all"))
+        {
+            int result = JOptionPane.showConfirmDialog(null,"This will delete "+getMarkableCount()+" markables!\nAre you sure?",getMarkableLevelName(),JOptionPane.YES_NO_OPTION);
+            if (result == JOptionPane.YES_OPTION)
+            {
+                deleteAllMarkables();
+                if (mmax2 != null)
+                {
+                    mmax2.requestRefreshDisplay();
+                    mmax2.requestReapplyDisplay();
+                }
+            }
+        }        
+        else if (command.equals("save_this_level"))
+        {
+            // Save
+            saveMarkables("",false);
+            // Remove dirty tag, without browser refresh
+            setIsDirty(false,false);
+        }
+        else
+        {
+            getCurrentDiscourse().getCurrentMarkableChart().reorderMarkableLayers(command);
+            if(getCurrentDiscourse().getMMAX2().getAutoRefreshUponPanelAction())
+            {
+                getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlWindow.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlPanel.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                getCurrentDiscourse().getCurrentMarkableChart().rerender();
+                getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlWindow.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                getCurrentDiscourse().getCurrentMarkableChart().currentLevelControlPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));                
+            }
+        }
+    }
+    
+    
+    public final void setActive()
+    {
+        activatorComboBox.removeActionListener(this);
+        active = true;
+        System.err.println("Layer "+markableLevelName+" has been set to active");
+        nameLabel.setEnabled(true);                
+        visible = true;
+        switchCustomizations.setEnabled(true);
+        if (switchCustomizations.isSelected())
+        {
+            updateCustomization.setEnabled(true);
+        }             
+        
+        deleteAllButton.setEnabled(true);
+        validateButton.setEnabled(true);
+        
+        activatorComboBox.setSelectedItem("active");
+        activatorComboBox.addActionListener(this);
+    }
+    
+    public final void setInactive()
+    {
+        activatorComboBox.removeActionListener(this);
+        active = false;
+        System.err.println("Layer "+markableLevelName+" has been set to inactive");
+        nameLabel.setEnabled(false);               
+        visible = false;
+        switchCustomizations.setEnabled(false);
+        updateCustomization.setEnabled(false);      
+        
+        deleteAllButton.setEnabled(false);
+        validateButton.setEnabled(false);
+        
+        activatorComboBox.setSelectedItem("inactive");
+        activatorComboBox.addActionListener(this);
+    }
+    
+    public final void setVisible()
+    {
+        activatorComboBox.removeActionListener(this);
+        active = false;
+        System.err.println("Layer "+markableLevelName+" has been set to visible!");
+        nameLabel.setEnabled(false);                               
+        visible = true;
+        switchCustomizations.setEnabled(true);
+        if (switchCustomizations.isSelected())
+        {
+            updateCustomization.setEnabled(true);
+        }             
+        
+        deleteAllButton.setEnabled(false);
+        validateButton.setEnabled(false);
+        
+        
+        activatorComboBox.setSelectedItem("visible");
+        activatorComboBox.addActionListener(this);
+    }
+    /** Inner class for handling mouse clicks on MarkableLayer's name labels */
+    /*
+    class MarkableLevelMouseListener extends java.awt.event.MouseAdapter
+    {
+        public MarkableLevelMouseListener()
+        {
+            super();
+        }
