@@ -1682,3 +1682,201 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
     
     public final void unregisterMarkableAtEndOfFragment(Markable unregisteree, String de)
     {
+        /** Get array of those markables associated as ending with discourseElement de. */
+        Markable[] markables = (Markable[]) getAllMarkablesEndedByDiscourseElement(de);
+        /** Create new array with one element less */
+        Markable[] newMapping = new Markable[markables.length-1];
+        int filler=0;
+        // Iterate over all markables still associated with de
+        for (int u=0;u<markables.length;u++)
+        {
+            if (markables[u]==unregisteree)
+            {
+                filler=1;
+                continue;
+            }
+            newMapping[u-filler]=markables[u];
+        }        
+        endedMarkablesAtDiscourseElement.remove(de);        
+        if (newMapping.length > 0)
+        {
+            endedMarkablesAtDiscourseElement.put(de,newMapping);                 
+        }
+    }
+    
+    
+    /** This method informs the current layer that Markable markable starts at DiscourseElement id. 
+        It is called by the Markable constructor upon Markable creation. It has to be executed BEFORE style sheet application,
+        because the method getMarkablesStartedByDiscourseElement(id) is required during style sheet execution. */
+    public final void registerMarkableAtStartOfFragment(String discourseElementId, Markable markable)
+    {        
+    	//System.err.println(discourseElementId);
+    	
+        /** Get array of those markables already associated as starting with discourseElement Id, or null. */
+        Markable[] markables = (Markable[]) getAllMarkablesStartedByDiscourseElement(discourseElementId);
+        Markable[] mapping = null;
+        if (markables == null)
+        {
+            // There has not yet been any markable associated as starting with this discourseElement Id
+            // So create new mapping            
+            mapping = new Markable[1];
+            mapping[0] = markable;
+        }
+        else
+        {
+            // There is already a Markable associated as starting with this discourseElement Id
+            // Create new Array with len + 1
+            mapping = new Markable[markables.length+1];
+            System.arraycopy(markables,0,mapping,0,markables.length);
+            mapping[markables.length] = markable;
+            this.startedMarkablesAtDiscourseElement.remove(discourseElementId);
+        }
+        this.startedMarkablesAtDiscourseElement.put(discourseElementId,mapping);                 
+    }    
+
+    /** This method informs the current layer that Markable markable ends at DiscourseElement id. 
+        It is called by the Markable constructor upon Markable creation. It has to be executed BEFORE style sheet application,
+        because the method getMarkablesEndedByDiscourseElement(id) is required during style sheet execution. */    
+    public final void registerMarkableAtEndOfFragment(String discourseElementId, Markable markable)
+    {
+        /** Get array of those markables already associated as ending with discourseElement Id, or null. */
+        Markable[] markables = (Markable[]) getAllMarkablesEndedByDiscourseElement(discourseElementId);
+        Markable[] mapping = null;
+        if (markables == null)
+        {
+            // There has not yet been any markable associated as ending with this discourseElement Id
+            // So create new mapping            
+            mapping = new Markable[1];
+            mapping[0] = markable;
+        }
+        else
+        {
+            // There is already a Markable associated as ending with this discourseElement Id
+            // Create new Array with len + 1
+            mapping = new Markable[markables.length+1];
+            System.arraycopy(markables,0,mapping,0,markables.length);
+            mapping[markables.length] = markable;
+            endedMarkablesAtDiscourseElement.remove(discourseElementId);
+        }
+        endedMarkablesAtDiscourseElement.put(discourseElementId,mapping);                 
+    }    
+    
+    /** This method is called by each Markable constructor and updates this.markablesAtDiscourseElement to reflect that Markable
+        markable is associated with the DE with ID discourseElementId. */
+    public final void registerMarkableAtDiscourseElement(String discourseElementId, Markable markable)
+    {
+        /** Get array of those markables already associated with discourseElement Id, or null. */
+        Markable[] markables = (Markable[]) getAllMarkablesAtDiscourseElement(discourseElementId,false);
+        Markable[] mapping = null;
+        if (markables == null)
+        {
+            // There has not yet been any markable associated with this discourseElement Id
+            // So create new mapping            
+            mapping = new Markable[1];
+            mapping[0] = markable;
+        }
+        else
+        {
+            // There is already a Markable associated with this discourseElement Id
+            // Create new Array with len + 1
+            mapping = new Markable[markables.length+1];
+            System.arraycopy(markables,0,mapping,0,markables.length);
+            mapping[markables.length] = markable;
+            markablesAtDiscourseElement.remove(discourseElementId);
+        }
+        markablesAtDiscourseElement.put(discourseElementId,mapping);                    
+    }
+    
+    
+    /** This method sets for all Markables on this level the fields displayStartPosition and displayEndPosition. */
+    public final void setMarkableDisplayPositions()
+    {
+        // Iterate over all Markables on this MarkableLevel
+        Set allMarkableIDsSet = markableHash.keySet();
+        Iterator it = allMarkableIDsSet.iterator();
+        while(it.hasNext())
+        {
+            MarkableHelper.setDisplayPositions(((Markable)markableHash.get(it.next())));
+        }
+    }
+    
+    public final MMAX2OneClickAnnotationSelector createOneClickAnnotationSelector(Markable currentPrimary, MarkableChart _chart, int displayPos)
+    {
+        MMAX2OneClickAnnotationSelector selector = null;
+        String currentOneClickAttributeName = getCurrentAnnotationScheme().getCurrentAttributePanel().getOneClickAnnotationAttributeName();
+        if (currentOneClickAttributeName.equals("<none>")==false)
+        {
+            // There is a oneclickanno attribute defined for the current level
+            // Now see if this attribute is available to the currently selected markable
+            if (currentPrimary.isDefined(currentOneClickAttributeName))
+            {
+                // The oneclickattribute is available for the current markable
+                // isDefined suffices here because we call this only for selected markables, 
+                // which have correct defaults already
+                MMAX2Attribute realAttribute = getCurrentAnnotationScheme().getUniqueAttributeByName("^"+currentOneClickAttributeName.toLowerCase()+"$");
+                selector = new MMAX2OneClickAnnotationSelector(currentPrimary, realAttribute, _chart, displayPos);
+            }            
+        }        
+        return selector;
+    }
+    
+    
+    /** This method is called by the MarkableChart for each MarkableLayer associated with it, AFTER the style sheet has been applied.
+        It uses getDiscoursePositionFromDiscourseElementId to fill the array markablesAtDiscoursePosition with arrays of Markables
+        associated with the DE at this discourse position.
+        The method must be called AFTER style sheet execution because it is only there that DiscourseElements are associated with
+        discourse positions. 
+        As a result, direct (constant time) access from discourse positions to associated markables is possible. */
+    public final void createDiscoursePositionToMarkableMapping()
+    {
+        //markablesAtDiscoursePosition = new Markable[this.getCurrentDiscourse().getTotalNumberOfDiscourseElements()][0];
+    	markablesAtDiscoursePosition = new Markable[getCurrentDiscourse().getDiscourseElementCount()][0];
+        int tempDiscPos = 0;
+        String tempDE = "";
+        /** Get array of all discourse element IDs this MarkableLayer has markables on. */
+        // New October 1st, 2004: Use 0 as array template to correctly get zero-length array in case of empty level
+        String[] allDEs = (String[]) this.markablesAtDiscourseElement.keySet().toArray(new String[0]);
+        int numDEs = allDEs.length;        
+        /** Iterate over all DEs this MarkableLayer has Markables on. */
+        for (int z=0;z<numDEs;z++)
+        {
+            tempDE = (String)allDEs[z];
+            tempDiscPos = this.getCurrentDiscourse().getDiscoursePositionFromDiscourseElementID(tempDE);
+            if (tempDiscPos != -1)
+            {            
+                this.markablesAtDiscoursePosition[tempDiscPos] = this.getAllMarkablesAtDiscourseElement(tempDE, true);            
+            }
+        }                
+    }
+    
+    protected void finalize()
+    {
+//        System.err.println("MarkableLevel "+this.getMarkableLevelName()+" is being finalized!");        
+        try
+        {
+            super.finalize();
+        }
+        catch (java.lang.Throwable ex)
+        {
+            ex.printStackTrace();
+        }        
+    }
+    
+    public final void updateDiscoursePositionToMarkableMapping(String tempDE)
+    {
+        int tempDiscPos = getCurrentDiscourse().getDiscoursePositionFromDiscourseElementID(tempDE);
+        markablesAtDiscoursePosition[tempDiscPos] = getAllMarkablesAtDiscourseElement(tempDE, true);            
+    }
+    
+    protected final void updateNameLabelText()
+    {
+        boolean doit = false;
+        String HTMLText ="";
+        try
+        {
+            doit = currentDiscourse.getMMAX2().getUseFancyLabels();
+        }
+        catch (java.lang.NullPointerException ex)   
+        {
+            doit = true;
+        }
