@@ -2275,3 +2275,196 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
             item = null;
             item = new JMenuItem("magenta");            
             if (renderer.getBackgroundColor()==Color.magenta) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.magenta);
+            item.setForeground(Color.black);
+            item.setActionCommand("background");
+            backgroundColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("orange");            
+            if (renderer.getBackgroundColor()==Color.orange) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.orange);
+            item.setForeground(Color.black);
+            item.setActionCommand("background");
+            backgroundColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("pink");            
+            if (renderer.getBackgroundColor()==Color.pink) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.pink);
+            item.setForeground(Color.black);
+            item.setActionCommand("background");
+            backgroundColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("red");            
+            if (renderer.getBackgroundColor()==Color.red) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.red);
+            item.setForeground(Color.black);
+            item.setActionCommand("background");
+            backgroundColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("white (transparent)");
+            if (renderer.getBackgroundColor()==Color.white) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.white);            
+            item.setForeground(Color.black);
+            item.setActionCommand("background");
+            backgroundColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("yellow");            
+            if (renderer.getBackgroundColor()==Color.yellow) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.yellow);
+            item.setForeground(Color.black);    
+            item.setActionCommand("background");
+            backgroundColorMenu.add(item);                        
+            colorMenu.add(backgroundColorMenu);
+            
+            JMenu handleColorMenu = new JMenu("Handles");
+            
+            item = new JMenuItem("black");
+            if (renderer.getHandleColor()==Color.black) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.black);
+            item.setForeground(Color.white);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);            
+            
+            item = null;            
+            item = new JMenuItem("blue");
+            if (renderer.getHandleColor()==Color.blue) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setForeground(Color.black);
+            item.setBackground(Color.blue);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("cyan");
+            if (renderer.getHandleColor()==Color.cyan) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setForeground(Color.black);
+            item.setBackground(Color.cyan);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("darkGray");            
+            if (renderer.getHandleColor()==Color.darkGray) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setForeground(Color.white);
+            item.setBackground(Color.darkGray);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("gray");            
+            if (renderer.getHandleColor()==Color.gray) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setForeground(Color.black);            
+            item.setBackground(Color.gray);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("green");
+            if (renderer.getHandleColor()==Color.green) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.green);
+            item.setForeground(Color.black);    
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("lightGray");            
+            if (renderer.getHandleColor()==Color.lightGray) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.lightGray);
+            item.setForeground(Color.black);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("magenta");            
+            if (renderer.getHandleColor()==Color.magenta) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.magenta);
+            item.setForeground(Color.black);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("orange");            
+            if (renderer.getHandleColor()==Color.orange) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.orange);
+            item.setForeground(Color.black);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("pink");            
+            if (renderer.getHandleColor()==Color.pink) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.pink);
+            item.setForeground(Color.black);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("red");            
+            if (renderer.getHandleColor()==Color.red) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.red);
+            item.setForeground(Color.black);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("white (transparent)");
+            if (renderer.getHandleColor()==Color.white) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.white);            
+            item.setForeground(Color.black);
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+            
+            item = null;
+            item = new JMenuItem("yellow");            
+            if (renderer.getHandleColor()==Color.yellow) item.setEnabled(false);
+            item.addActionListener(colorSelectionListener);
+            item.setBackground(Color.yellow);
+            item.setForeground(Color.black);    
+            item.setActionCommand("handle");
+            handleColorMenu.add(item);
+                        
+            colorMenu.add(handleColorMenu);
+            
+            menu.add(colorMenu);
+            
+            JMenu decorationMenu = new JMenu("Decoration");
+            JMenuItem boldMenuItem = new JMenuItem("Bold");
+            if (renderer.getIsBold()) boldMenuItem.setEnabled(false);
+            boldMenuItem.addActionListener(colorSelectionListener);
+            boldMenuItem.setActionCommand("bold");
+            decorationMenu.add(boldMenuItem);
+            
+            JMenuItem italicMenuItem = new JMenuItem("Italic");
+            italicMenuItem.addActionListener(colorSelectionListener);
+            if (renderer.getIsItalic()) italicMenuItem.setEnabled(false);
+            italicMenuItem.setActionCommand("italic");
+            decorationMenu.add(italicMenuItem);
+            
+            JMenuItem none1MenuItem = new JMenuItem("None");
+            none1MenuItem.addActionListener(colorSelectionListener);
+            if (renderer.getIsBold()==false && renderer.getIsItalic()==false) none1MenuItem.setEnabled(false);
+            none1MenuItem.setActionCommand("none1");
+            decorationMenu.add(none1MenuItem);
+            
