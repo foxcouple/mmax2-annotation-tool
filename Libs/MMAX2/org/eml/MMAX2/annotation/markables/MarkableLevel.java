@@ -2468,3 +2468,187 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
             none1MenuItem.setActionCommand("none1");
             decorationMenu.add(none1MenuItem);
             
+            JMenu otherDecorationMenu = new JMenu("Other");
+            JMenuItem underlineMenuItem = new JMenuItem("Underline");
+            if(renderer.getIsUnderline()) underlineMenuItem.setEnabled(false);
+            underlineMenuItem.addActionListener(colorSelectionListener);
+            underlineMenuItem.setActionCommand("underline");
+            otherDecorationMenu.add(underlineMenuItem);
+            
+            JMenuItem strikethroughMenuItem = new JMenuItem("Strike through");
+            if(renderer.getIsStrikethrough()) strikethroughMenuItem.setEnabled(false);
+            strikethroughMenuItem.addActionListener(colorSelectionListener);
+            strikethroughMenuItem.setActionCommand("strikethrough");
+            otherDecorationMenu.add(strikethroughMenuItem);
+
+            JMenuItem none2MenuItem = new JMenuItem("None");
+            none2MenuItem.addActionListener(colorSelectionListener);
+            if (renderer.getIsUnderline()==false && renderer.getIsStrikethrough()==false) none2MenuItem.setEnabled(false);
+            none2MenuItem.setActionCommand("none2");
+            otherDecorationMenu.add(none2MenuItem);
+            
+            decorationMenu.add(otherDecorationMenu);
+            menu.add(decorationMenu);
+            
+            JMenu positionMenu = new JMenu("Position");
+            JMenuItem superscriptMenuItem = new JMenuItem("Super");
+            superscriptMenuItem.addActionListener(colorSelectionListener);
+            if(renderer.getIsSuperscript()) superscriptMenuItem.setEnabled(false);
+            superscriptMenuItem.setActionCommand("super");
+            positionMenu.add(superscriptMenuItem);
+            
+            JMenuItem normalMenuItem = new JMenuItem("Normal");
+            if(renderer.getIsSubscript()==false && renderer.getIsSuperscript()==false) normalMenuItem.setEnabled(false);
+            normalMenuItem.addActionListener(colorSelectionListener);
+            normalMenuItem.setActionCommand("normal");
+            positionMenu.add(normalMenuItem);
+            
+            JMenuItem subscriptMenuItem = new JMenuItem("Sub");
+            subscriptMenuItem.addActionListener(colorSelectionListener);
+            if(renderer.getIsSubscript()) subscriptMenuItem.setEnabled(false);
+            subscriptMenuItem.setActionCommand("sub");
+            positionMenu.add(subscriptMenuItem);
+                        
+            menu.add(positionMenu);            
+            menu.show((JLabel)me.getSource(),me.getX(),me.getY());
+            //item.setFont();            
+        }
+    }*/
+    
+    /** Inner class for processing Popup menu selection events. */
+    /*
+    class ColorSelectionListener implements java.awt.event.ActionListener
+    {        
+        public void actionPerformed(java.awt.event.ActionEvent actionEvent) 
+        {
+            String command = actionEvent.getActionCommand();
+            JMenuItem source = (JMenuItem) actionEvent.getSource();
+            if (command.equals("foreground"))
+            {
+                if (source.getText().indexOf("transparent")!=-1)
+                {
+                    System.out.println("Transparent foreground selected!");
+//                    renderer.setForegroundIsTransparent(true);
+                    renderer.setForegroundColor(null);
+                    nameLabel.setForeground(Color.black);
+                }
+                else
+                {
+                    System.out.println("Opaque foreground selected!");
+//                    renderer.setForegroundIsTransparent(false);
+                    renderer.setForegroundColor(source.getBackground());
+                    nameLabel.setForeground(source.getBackground());
+                }
+            }
+            else if (command.equals("background"))
+            {
+                if (source.getText().indexOf("transparent")!=-1)
+                {
+                    System.out.println("Transparent background selected!");
+                    //renderer.setBackgroundIsTransparent(true);
+                    renderer.setBackgroundColor(null);                   
+                    nameLabel.setBackground(Color.white);
+                }
+                else
+                {
+                    System.out.println("Opaque background selected!");
+                    //renderer.setBackgroundIsTransparent(false);
+                    renderer.setBackgroundColor(source.getBackground());                    
+                    nameLabel.setBackground(source.getBackground());
+                }
+            }
+            else if (command.equals("handle"))
+            {
+                System.out.println("Setting handle to "+source.getBackground());
+                renderer.setHandleColor(source.getBackground());
+            }
+            else if (command.equals("bold"))
+            {
+                renderer.setIsBold(true);
+            }
+            else if (command.equals("italic"))
+            {
+                renderer.setIsItalic(true);
+            }
+            else if (command.equals("none1"))
+            {
+                renderer.setIsBold(false);
+                renderer.setIsItalic(false);
+            }
+            else if (command.equals("underline"))
+            {
+                renderer.setIsUnderline(true);
+                renderer.setIsStrikethrough(false);
+            }
+            else if (command.equals("strikethrough"))
+            {
+                renderer.setIsUnderline(false);
+                renderer.setIsStrikethrough(true);
+            }
+            else if (command.equals("none2"))
+            {
+                renderer.setIsUnderline(false);
+                renderer.setIsStrikethrough(false);
+            }
+            else if (command.equals("super"))
+            {
+                renderer.setIsSuperscript(true);
+                renderer.setIsSubscript(false);
+            }
+            else if (command.equals("sub"))
+            {
+                renderer.setIsSuperscript(false);
+                renderer.setIsSubscript(true);
+            }
+            else if (command.equals("normal"))
+            {
+                renderer.setIsSuperscript(false);
+                renderer.setIsSubscript(false);
+            }
+            
+            updateNameLabelText();
+            
+            
+            if (getCurrentDiscourse().getMMAX2().getAutoRefreshUponPanelAction())
+            {
+                getCurrentDiscourse().getCurrentMarkableChart().rerender();
+            }                                                
+        }        
+    } 
+    */
+    /** This method parses the value of a span attribute and returns an Array with one Array per fragment. 
+        Spans of the form word_x..word_y will be expanded to include all intermediate ids.
+        Note: This works be retrieving the first element in the span and iterating until the last
+        element in the span is found. That means that this does not assume the numerical ID parts to
+        be integers. */
+    private final static String[][] parseMarkableSpan(String span, DocumentImpl dom, MarkableLevel _level)
+    {
+        String currentspan="";
+        ArrayList spanlist = new ArrayList();
+        String[] fragArray= null;
+
+        /* Get overall length of span attribute */
+        int spanlen = span.length();
+
+        /** Iterate over entire span String */
+        for (int i=0;i<spanlen;i++)
+        {
+            /** Move to next span separator (i.e. ,) */
+            if(span.charAt(i) != ',')
+            {
+                currentspan=currentspan+span.charAt(i);
+                continue;
+            }
+            currentspan.trim();
+            fragArray=parseMarkableSpanFragmentToArray(currentspan, dom, _level);
+            spanlist.add(fragArray);
+            currentspan="";
+            fragArray=null;
+        }// for
+        
+        currentspan.trim();
+        fragArray=parseMarkableSpanFragmentToArray(currentspan,dom,_level);
+        spanlist.add(fragArray);
+        currentspan="";
+        fragArray=null;
+        
