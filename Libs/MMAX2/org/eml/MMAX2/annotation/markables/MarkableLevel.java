@@ -2652,3 +2652,137 @@ public class MarkableLevel implements java.awt.event.ActionListener, MarkableLev
         currentspan="";
         fragArray=null;
         
+        return (String[][]) spanlist.toArray(new String[1][1]);
+    }
+    
+
+    
+    /** This method parses the value of a span fragment (either word_1..word_4 or word_3) and returns an array of all elements.
+        Spans of the form word_x..word_y are expanded to include all intermediate ids. 
+        Note: This works be retrieving the first element in the span and iterating until the last
+        element in the span is found. That means that this does not assume the numerical ID parts to
+        be integers.*/
+    private final static String[] parseMarkableSpanFragmentToArray(String span, DocumentImpl dom, MarkableLevel _level)
+    {        
+	String firstIDString;
+	String lastIDString;
+
+//	System.err.println(span);
+	
+        // Create list to receive intermediate result
+	ArrayList newWordsIDList = new ArrayList();
+
+	if (span.indexOf("..") == -1)
+	{
+            /* No .. found, so span is one element only */
+            newWordsIDList.add(span);
+	}
+        else
+        {            
+            /* Extract leftmost id string from span */
+            firstIDString=span.substring(0,span.indexOf(".."));
+            /* Extract rightmost id string from span */
+            lastIDString=span.substring(span.lastIndexOf("..") + 2);
+
+            double lastIDValue = Double.parseDouble(lastIDString.substring(lastIDString.indexOf("_")+1));
+            // Get first element in span  
+            Node currentNode = getWordNodeOrClosestSuccessor(dom, firstIDString);
+            
+            
+            if (currentNode == null)
+            {                
+                String message = "A markable on level "+_level.getMarkableLevelName()+" references an element with id "+firstIDString+",\n";
+                message = message + "but an element with ID "+firstIDString+" could not be found!\n";
+                message = message + "This is a serious error, and might be caused by a missing DTD declaration in the word file.";
+                JOptionPane.showMessageDialog(null,message,"ID not found !",JOptionPane.ERROR_MESSAGE);
+                System.exit(0);                                
+            }
+             
+            newWordsIDList.add(firstIDString);
+            Node nextNode = null;
+            while(true)
+            {
+                // Set next to next after current
+                nextNode = currentNode.getNextSibling();
+                if (nextNode == null)
+                {
+                    break;
+                }
+                // If next is no element, do nothing with next node
+                if (nextNode.getNodeType() != Node.ELEMENT_NODE)
+                {
+                    // 
+                    currentNode = nextNode;
+                    continue;
+                }
+                
+                // nextNode is an element node
+                // add its id to the list
+                newWordsIDList.add(nextNode.getAttributes().getNamedItem("id").getNodeValue());
+                String justAddedID = nextNode.getAttributes().getNamedItem("id").getNodeValue();
+//                System.err.println(justAddedID);
+                double justAddedValue = Double.parseDouble(justAddedID.substring(justAddedID.indexOf("_")+1));
+                // Break if just added was last in span
+                if (justAddedID.equalsIgnoreCase(lastIDString))
+                {
+                    break;
+                }
+                // ... or even later
+                if (justAddedValue > lastIDValue)
+                {
+                    newWordsIDList.remove(newWordsIDList.size()-1);
+                    break;
+                }                
+                currentNode = nextNode;
+            }                        
+        }
+        
+	return (String[]) newWordsIDList.toArray(new String[0]);
+   }    
+    
+    
+    private final static Node getWordNodeOrClosestSuccessor(DocumentImpl dom, String id)
+    {
+        Node result = null;
+        result = dom.getElementById(id);
+        if (result == null)
+        {
+            // The node with id id could not be retrieved
+            // Extract name space from id
+            String nameSpace = id.substring(0,id.indexOf("_"));
+            int requiredID = Integer.parseInt(id.substring(id.indexOf("_")+1));
+            Node node = dom.getDocumentElement();
+            node = node.getFirstChild();
+            // Iterate over all elements in supplied dom
+            while(true)
+            {       
+                if (node != null && node.getNodeType()==Node.ELEMENT_NODE && node.getAttributes() != null)
+                {
+                    if (node.getAttributes() != null)
+                    {
+                        if (node.getAttributes().getNamedItem("id")!= null)
+                        {
+                            // The current element has an id
+                            String currentIDString =node.getAttributes().getNamedItem("id").getNodeValue();
+                            // get numerical value
+                            int currentIDNum = Integer.parseInt(currentIDString.substring(currentIDString.indexOf("_")+1));
+                            // If current element has higher id then required one, break
+                            if (currentIDNum >= requiredID)
+                            {
+                                result=node;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else if (node == null)
+                {
+                    break;
+                }            
+                Node tmpnode = node.getNextSibling();
+                node = tmpnode;
+            }
+        }
+        return result;
+    }    
+}
