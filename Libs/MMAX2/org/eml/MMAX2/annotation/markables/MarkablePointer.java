@@ -247,3 +247,210 @@ public class MarkablePointer implements Renderable, MarkablePointerAPI
     }
     
     
+    public void addTargetMarkable(Markable _markable)
+    {
+//    	System.out.println(_markable.getLeftmostDisplayPosition());
+//    	System.out.println(_markable.getRightmostDisplayPosition());
+        if (_markable.getLeftmostDisplayPosition() < this.leftMostPosition)
+        {
+            this.leftMostPosition = _markable.getLeftmostDisplayPosition();
+        }
+        if (_markable.getRightmostDisplayPosition() > this.rightMostPosition)
+        {
+            this.rightMostPosition = _markable.getRightmostDisplayPosition();
+        }        
+//        System.out.println("LM "+this.leftMostPosition);
+//        System.out.println("RM "+this.rightMostPosition);        
+        
+        if (targetMarkables.contains(_markable)==false)
+        {
+            targetMarkables.add(_markable);
+            size++;
+        }        
+    }
+    
+    public void unselect(MMAX2Document doc) 
+    {
+        doc.startChanges(leftMostPosition, (rightMostPosition-leftMostPosition)+1);
+        if (size > 0)
+        {   
+            if (permanent)
+            {
+                // If this is rendered because it is permanent, draw source also, unless it is main
+                {
+                    getSourceMarkable().renderMe(MMAX2Constants.RENDER_UNSELECTED);
+                }
+            }                
+            
+            // Iterate over entire set
+            for (int z=0;z<size;z++)
+            {
+                // Reset each Markable individually
+                ((Markable)targetMarkables.get(z)).renderMe(MMAX2Constants.RENDER_UNSELECTED);
+            }
+        }        
+        X_points = null;
+        Y_points = null;
+        doc.commitChanges();
+        
+    }
+    
+    public void refresh(Graphics2D graphics) 
+    {
+        if (size > 0)
+        {            
+            drawSet(graphics);            
+        }        
+    }
+
+    
+    
+    /** This method is called ONCE when this markable_pointer is to be rendered initially. It renders both the 
+        individual set member Markables and the lines between them (if any.) */
+    public final void select(Graphics2D graphics, MMAX2Document doc, Markable currentlySelectedMarkable)
+    {        
+//    	System.out.println("Select Pointer");
+        Markable temp = null;
+        // Make sure the line points are up-to-date
+        updateLinePoints();
+        doc.startChanges(leftMostPosition, (rightMostPosition-leftMostPosition)+1);
+        if (size > 0)
+        {          
+            if (permanent)
+            {
+                // If this is rendered because it is permanent, draw source also, unless it is main
+                temp = getSourceMarkable();
+                if (temp.equals(currentlySelectedMarkable)==false)
+                {
+                    temp.renderMe(MMAX2Constants.RENDER_IN_SET);
+                }
+            }
+            // Iterate over entire set
+            for (int z=0;z<size;z++)
+            {
+                // Render Markable itself, unless it is the currently selected one, which is expected to be highlighted already
+                // Get current set member
+                temp = ((Markable)targetMarkables.get(z));
+                if (temp.equals(currentlySelectedMarkable)==false)
+                {
+                    temp.renderMe(MMAX2Constants.RENDER_IN_SET);
+                }
+            }
+            // Draw entire line at once; points have been set/updated by call to updateLinePoints() 
+            drawSet(graphics);
+        }
+        doc.commitChanges();
+    }
+    
+    public final void updateLinePoints()
+    {
+        Point currentPoint = sourceMarkable.getPoint();
+        X_origin = (int)currentPoint.getX();
+        Y_origin = (int)currentPoint.getY();
+     
+        // Store four ints for each elem in size
+        rects = new Point[size][4];
+        
+        currentPoint=null;
+        
+        X_points = new int[size];
+        Y_points = new int[size];
+        // Iterate over all Markables in this set
+        for (int z=0;z<size;z++)
+        {
+            // Get and store points of line
+            currentPoint = ((Markable)targetMarkables.get(z)).getPoint();
+            X_points[z] = (int)currentPoint.getX();
+            Y_points[z] = (int)currentPoint.getY();
+            
+            //rects[z] = ((Markable)targetMarkables.get(z)).getRectangle();            
+        }        
+    }
+    
+    
+    private final void drawSet(Graphics2D graphics)
+    {        
+        QuadCurve2D.Double c = null;
+        Point ctrlPoint = null;
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Iterate over entire set, backwards        
+        for (int z=size-1;z>=0;z--)
+        {
+            // Set color as defined in scheme
+            graphics.setColor(markableRelation.getLineColor());
+            if (dashed==false) { graphics.setStroke(new BasicStroke(lineWidth)); }
+            else               { graphics.setStroke(new BasicStroke(lineWidth, BasicStroke.CAP_SQUARE,BasicStroke.JOIN_MITER,10,dash1,0));}
+                        
+            if (markableRelation.getLineStyle() == MMAX2Constants.STRAIGHT)
+            {
+            	graphics.drawLine(X_origin,Y_origin,X_points[z],Y_points[z]);
+            }
+            else
+            {
+                // Default: non-smart
+                boolean smart=false;
+                if (markableRelation.getLineStyle()==MMAX2Constants.SMARTCURVE)
+                {
+                    smart=true;
+                    if (X_origin < X_points[z]) { markableRelation.setLineStyle(MMAX2Constants.LCURVE); }
+                    else 						{ markableRelation.setLineStyle(MMAX2Constants.RCURVE); }
+                }
+                c = new QuadCurve2D.Double();                
+            	boolean classic = true;
+            	if (classic)
+            	{
+            		ctrlPoint = MMAX2Utils.calculateControlPoint(X_origin,Y_origin,X_points[z],Y_points[z], markableRelation.getLineStyle());
+            		c.setCurve((double)X_origin,(double)Y_origin,(double)ctrlPoint.getX(),(double)ctrlPoint.getY(),(double)X_points[z],(double)Y_points[z]);
+            	}
+            	else { // not yet implemented  
+            	}
+
+                // Draw pointer
+                graphics.draw(c);                               
+                
+                // Flag drawing stuff
+                if (smart)
+                {                	
+                	graphics.fillOval(X_origin-4, Y_origin-4,8,8);
+                    markableRelation.setLineStyle(MMAX2Constants.SMARTCURVE);
+                    // Default: flag to right
+                    boolean flagToRight = true;
+                    
+                    String toDisplay = getMarkableRelation().getAttributeName();
+                    String attributeToDisplay = getMarkableRelation().getAttributeNameToShowInFlag();
+                    if (attributeToDisplay.equals("")==false)
+                    {
+                       // The value of some attribute is to be displayed in the flag
+                        Markable currentTarget = (Markable) targetMarkables.get(z);
+                        toDisplay = toDisplay+" "+attributeToDisplay+"="+currentTarget.getAttributeValue(attributeToDisplay,"");
+                    }                    
+                    
+                    // Get rect containing the string to draw
+                    // Set font for flag *before* getting its bounds
+                    graphics.setFont(graphics.getFont().deriveFont(java.awt.Font.BOLD));                    
+                    // Get font metrics
+                    FontMetrics m = graphics.getFontMetrics();                    
+                    Rectangle2D rect = m.getStringBounds(toDisplay,graphics);
+                    // Get const for flag X level (set in renderer)
+                    int flagXLevel = (flagDisplayLevel+1+z)*25;
+                    
+                    if (((int)rect.getWidth())+flagXLevel+X_points[z]+6 >= sourceMarkable.getMarkableLevel().getCurrentDiscourse().getMMAX2().getCurrentTextPane().getWidth())
+                    {
+                        flagToRight = false;
+                    }
+                    
+                    // The attribute name is to be shown as a flag
+                    // Set color to black for flag line
+                    // Todo: Use pointer color ?
+                    graphics.setColor(Color.black);
+                    graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_SQUARE,BasicStroke.JOIN_MITER));
+                    if (flagToRight)
+                    {
+                        // Draw flag line from start point to right top
+                        graphics.drawLine(X_points[z],Y_points[z],X_points[z]+flagXLevel,Y_points[z]-flagXLevel);
+                    }
+                    else
+                    {
+                        // Draw flag line from start point to left top
+                        graphics.drawLine(X_points[z],Y_points[z], X_points[z]-flagXLevel,Y_points[z]-flagXLevel);
