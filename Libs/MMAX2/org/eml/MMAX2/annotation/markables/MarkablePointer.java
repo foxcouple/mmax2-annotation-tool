@@ -60,3 +60,190 @@ public class MarkablePointer implements Renderable, MarkablePointerAPI
     public MarkablePointer(Markable _sourceMarkable, int _lineWidth, Color _color, int _lineStyle, int _maxSize, MarkableRelation _relation, boolean _dashed) 
     {
         dash1 = new float[2];
+        dash1[0] =10;
+        dash1[1] =10;
+
+        dash2 = new float[2];
+        dash2[0] =4;
+        dash2[1] =4;
+        
+        markableRelation = _relation;
+        sourceMarkable = _sourceMarkable;
+        lineWidth = _lineWidth;
+        dashed = _dashed;
+        leftMostPosition = sourceMarkable.getLeftmostDisplayPosition();
+        rightMostPosition = sourceMarkable.getRightmostDisplayPosition();        
+        targetMarkables = new ArrayList();                
+        maxSize = _maxSize;
+    }
+
+    public final void setIsPermanent(boolean _permanent)
+    {
+        permanent = _permanent;
+    }
+    
+    public final boolean getIsPermanent()
+    {
+        return permanent;
+    }
+    
+    public final boolean hasMaxSize()
+    {
+        if (maxSize==-1)
+        {
+            return false;
+        }
+        else
+        {
+            return size==maxSize;
+        }
+    }
+    
+    public final String getTargetSpan()
+    {
+        String span = "";        
+        Markable currentTarget = null;
+        if (targetMarkables.size()==1)
+        {
+            currentTarget = ((Markable)targetMarkables.get(0));
+            // If source and this target are from the same level, use only id
+            if (currentTarget.getMarkableLevelName().equals(getSourceMarkable().getMarkableLevelName()))
+            {
+                span = currentTarget.getID();
+            }
+            else
+            {
+                // Prepend level name to target markable id
+                span=currentTarget.getMarkableLevelName()+":"+currentTarget.getID();
+            }
+        }
+        else if (targetMarkables.size()>1)
+        {
+            // Iterate over all target in this pointer set
+            for (int z=0;z<targetMarkables.size();z++)
+            {
+                // Get current target
+                currentTarget = ((Markable)targetMarkables.get(z));
+                if (z==0)
+                {
+                    // If source and this target are from the ame level, use only id
+                    if (currentTarget.getMarkableLevelName().equals(getSourceMarkable().getMarkableLevelName()))
+                    {
+                        span = currentTarget.getID();
+                    }
+                    else
+                    {
+                        // Prepend level name to target markable id
+                        span=currentTarget.getMarkableLevelName()+":"+currentTarget.getID();
+                    }
+                }
+                else
+                {
+                    // If source and this target are from the ame level, use only id
+                    if (currentTarget.getMarkableLevelName().equals(getSourceMarkable().getMarkableLevelName()))
+                    {
+                        span = span+";"+currentTarget.getID();
+                    }
+                    else
+                    {
+                        // Prepend level name to target markable id
+                        span=span+";"+currentTarget.getMarkableLevelName()+":"+currentTarget.getID();
+                    }
+                }
+            }
+        }        
+        return span;
+    }
+    
+    public final void setAmbient(boolean status)
+    {
+        this.ambient = status;
+    }
+    
+    public final boolean isAmbient()
+    {
+        return ambient;
+    }
+       
+
+    public final int getSize()
+    {
+        return size;
+    }  
+
+   
+    ///
+
+    public final MarkableRelation getMarkableRelation()
+    {
+        return markableRelation;
+    }
+        
+    public final Markable[] getTargetMarkables()
+    {
+    	return (Markable[]) targetMarkables.toArray(new Markable[0]);
+    }
+    
+    public final Markable getSourceMarkable()
+    {
+        return sourceMarkable;
+    }
+    
+    public final boolean isSourceMarkable(Markable potentialSourceMarkable)
+    {
+        return sourceMarkable==potentialSourceMarkable;
+    }
+    
+    public final boolean isTargetMarkable(Markable potentialTargetMarkable)
+    {
+        return targetMarkables.contains(potentialTargetMarkable);
+    }
+
+    public boolean containsMarkable(Markable markable) 
+    {
+        boolean result = false;
+        if (markable == this.sourceMarkable)
+        {
+            result = true;
+        }
+        else if (this.targetMarkables.contains(markable))
+        {
+            result=true;
+        }
+        return result;
+    }
+
+
+    
+    
+    
+    
+    
+    public final void removeTargetMarkable(Markable removee)
+    {
+        targetMarkables.remove(removee);
+        size--;
+    }
+    
+    
+    
+    public final void removeMeFromMarkableRelation()
+    {
+        markableRelation.removeMarkablePointer(this);
+        size=0;
+    }
+     
+    
+    public final String toString()
+    {
+        if (size == 1)
+        {
+            return getSourceMarkable().toString()+" ["+size+" target]";
+        }
+        else
+        {
+            return getSourceMarkable().toString()+" ["+size+" targets]";
+        }
+    }
+    
+    
