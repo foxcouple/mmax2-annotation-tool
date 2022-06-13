@@ -454,3 +454,172 @@ public class MarkablePointer implements Renderable, MarkablePointerAPI
                     {
                         // Draw flag line from start point to left top
                         graphics.drawLine(X_points[z],Y_points[z], X_points[z]-flagXLevel,Y_points[z]-flagXLevel);
+                    }
+                                        
+                    int flagXOrigin=0;
+                    int flagYOrigin=0;
+                    
+                    int flagWidth=(int)rect.getWidth()+6;
+                    int flagHeight=(int)rect.getHeight()+6;
+
+                    if (flagToRight)
+                    {
+                        flagXOrigin=(int)X_points[z]+flagXLevel;
+                        flagYOrigin=(int)Y_points[z]-flagXLevel-(int)rect.getHeight()-6;
+                    }
+                    else
+                    {
+                        flagXOrigin=(int)X_points[z]-flagWidth-flagXLevel;
+                        flagYOrigin=(int)Y_points[z]-flagXLevel-(int)rect.getHeight()-6;                        
+                    }
+                    // Flag is filled w/o border
+                    
+                    Color co = new Color(markableRelation.getLineColor().getRed(),markableRelation.getLineColor().getGreen(),markableRelation.getLineColor().getBlue(),150);
+                    graphics.setColor(co);
+                    graphics.fill3DRect(flagXOrigin, flagYOrigin, flagWidth, flagHeight, true);                    
+                    
+                    graphics.setColor(Color.black);
+                    if (flagToRight)
+                    {
+                        graphics.drawString(toDisplay,X_points[z]+flagXLevel+3,Y_points[z]-(flagXLevel+6));
+                    }
+                    else
+                    {
+                        graphics.drawString(toDisplay,X_points[z]-flagXLevel-flagWidth+3,Y_points[z]-(flagXLevel+6));
+                    }
+                }
+            }
+        }
+    }
+
+    private final void drawSet_backup(Graphics2D graphics)
+    {        
+        QuadCurve2D.Double c = null;
+        Point ctrlPoint = null;
+        // Iterate over entire set
+        //for (int z=0;z<size;z++)
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);        
+        for (int z=size-1;z>=0;z--)
+        {
+            // Set color as defined in scheme
+            graphics.setColor(markableRelation.getLineColor());
+            // Set stroke
+            if (dashed==false)
+            {
+                graphics.setStroke(new BasicStroke(lineWidth));
+            }
+            else
+            {
+                graphics.setStroke(new BasicStroke(lineWidth, BasicStroke.CAP_SQUARE,BasicStroke.JOIN_MITER,10,dash1,0));            
+            }
+            
+            if (markableRelation.getLineStyle() == MMAX2Constants.STRAIGHT)
+            {
+                graphics.drawLine(X_origin,Y_origin,X_points[z],Y_points[z]);
+            }
+            else
+            {
+                // Default: non-smart
+                boolean smart=false;
+                if (markableRelation.getLineStyle()==MMAX2Constants.SMARTCURVE)
+                {
+                    smart=true;
+                    if (X_origin < X_points[z])
+                    {
+                       //lineStyle=MMAX2.LCURVE;
+                        markableRelation.setLineStyle(new Integer(MMAX2Constants.LCURVE));
+                    }
+                    else
+                    {
+                        //lineStyle=MMAX2.RCURVE;
+                        markableRelation.setLineStyle(new Integer(MMAX2Constants.RCURVE));
+                    }
+                }
+                c = new QuadCurve2D.Double();
+                ctrlPoint = MMAX2Utils.calculateControlPoint(X_origin,Y_origin,X_points[z],Y_points[z], markableRelation.getLineStyle());
+                c.setCurve((double)X_origin,(double)Y_origin,(double)ctrlPoint.getX(),(double)ctrlPoint.getY(),(double)X_points[z],(double)Y_points[z]);
+                if (smart)
+                {
+                    graphics.fillOval(X_origin-4, Y_origin-4,8,8);                    
+                }
+                // Draw pointer
+                graphics.draw(c);
+                
+                if (smart)
+                {
+                    // Default: flag to right
+                    boolean flagToRight = true;
+                    // Todo: Implement check for flag flip
+                    // Get font metrics
+                    FontMetrics m = graphics.getFontMetrics();                    
+                    
+                    String toDisplay = getMarkableRelation().getAttributeName();
+                    String attributeToDisplay = getMarkableRelation().getAttributeNameToShowInFlag();
+                    if (attributeToDisplay.equals("")==false)
+                    {
+                       // The value of some attribute is to be displayed in the flag
+                        Markable currentTarget = (Markable) targetMarkables.get(z);
+                        toDisplay = toDisplay+" "+attributeToDisplay+"="+currentTarget.getAttributeValue(attributeToDisplay,"");
+                    }                    
+                    
+                    // Get rect containing the string to draw
+                    Rectangle2D rect = m.getStringBounds(toDisplay,graphics);
+                    // Get const for flag X level (set in renderer)
+                    int flagXLevel = (flagDisplayLevel+1+z)*25;
+                    
+                    if (((int)rect.getWidth())+flagXLevel+X_points[z]+6 >= sourceMarkable.getMarkableLevel().getCurrentDiscourse().getMMAX2().getCurrentTextPane().getWidth())
+                    {
+                        flagToRight = false;
+                    }
+                    
+                    // The attribute name is to be shown as a flag
+                    // Set color to black for flag
+                    graphics.setColor(Color.black);
+                    // Set stroke to massive
+                    graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_SQUARE,BasicStroke.JOIN_MITER));
+                    if (flagToRight)
+                    {
+                        // Draw flag line from start point to right top
+                        graphics.drawLine(X_points[z],Y_points[z],X_points[z]+flagXLevel,Y_points[z]-flagXLevel);
+                    }
+                    else
+                    {
+                        // Draw flag line from start point to left top
+                        graphics.drawLine(X_points[z],Y_points[z],X_points[z]-flagXLevel,Y_points[z]-flagXLevel);
+                    }
+                    // Set font for flag
+                    graphics.setFont(graphics.getFont().deriveFont(java.awt.Font.BOLD,11));                    
+                    graphics.setColor(Color.white);                    
+                    
+                    int flagXOrigin=0;
+                    int flagYOrigin=0;
+                    
+                    int flagWidth=(int)rect.getWidth()+6;
+                    int flagHeight=(int)rect.getHeight()+6;
+
+                    if (flagToRight)
+                    {
+                        flagXOrigin=(int)X_points[z]+flagXLevel;
+                        flagYOrigin=(int)Y_points[z]-flagXLevel-(int)rect.getHeight()-6;
+                    }
+                    else
+                    {
+                        flagXOrigin=(int)X_points[z]-flagWidth-flagXLevel;
+                        flagYOrigin=(int)Y_points[z]-flagXLevel-(int)rect.getHeight()-6;                        
+                    }
+                    graphics.fillRect(flagXOrigin, flagYOrigin, flagWidth, flagHeight);                    
+                    //graphics.fillRect(X_points[z]+flagXLevel,(int)Y_points[z]-flagXLevel-(int)rect.getHeight()-6,(int)rect.getWidth()+6,(int)rect.getHeight()+6);
+                    
+                    graphics.setColor(Color.black);
+                    //graphics.drawRect(X_points[z]+flagXLevel,(int)Y_points[z]-flagXLevel-(int)rect.getHeight()-6,(int)rect.getWidth()+6,(int)rect.getHeight()+6);
+                    graphics.drawRect(flagXOrigin, flagYOrigin, flagWidth, flagHeight);
+                    if (flagToRight)
+                    {
+                        graphics.drawString(toDisplay,X_points[z]+flagXLevel+3,Y_points[z]-(flagXLevel+6));
+                    }
+                    else
+                    {
+                        graphics.drawString(toDisplay,X_points[z]-flagXLevel-flagWidth+3,Y_points[z]-(flagXLevel+6));
+                    }
+                    //lineStyle=MMAX2.SMARTCURVE;
+                    markableRelation.setLineStyle(MMAX2Constants.SMARTCURVE);
