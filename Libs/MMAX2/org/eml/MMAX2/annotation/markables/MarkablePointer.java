@@ -623,3 +623,15 @@ public class MarkablePointer implements Renderable, MarkablePointerAPI
                     }
                     //lineStyle=MMAX2.SMARTCURVE;
                     markableRelation.setLineStyle(MMAX2Constants.SMARTCURVE);
+                }
+            }
+        }
+    }
+    
+    
+    public void setFlagLevel(int _level) 
+    {
+        flagDisplayLevel = _level;
+    }
+    
+}
