@@ -393,3 +393,221 @@ public class MarkableSet implements Renderable, MarkableSetAPI
             		int minx1=0;  
             		int miny1=0;
             		int minx2=0;
+            		int miny2 =0;
+                	Point[]r1=rects[z];
+                	Point[]r2=rects[z+1];
+                	for (int rx1=0;rx1<4;rx1++)
+                	{
+                		for (int rx2=0;rx2<4;rx2++)
+                		{
+                			dist=Point2D.distance(r1[rx1].getX(), r1[rx1].getY(), r2[rx2].getX(), r2[rx2].getY());
+                			if (dist<mindist)
+                			{
+                				mindist=dist;
+                				minx1=(int)r1[rx1].getX();
+                				miny1=(int)r1[rx1].getY();
+                				minx2=(int)r2[rx2].getX();
+                				miny2=(int)r2[rx2].getY();                				
+                			}
+                		}
+                	}		
+            		// shortest link between x1 and x2 has been found
+            		graphics.drawLine(minx1, miny1, minx2, miny2);
+                }
+        		
+        	}
+        }
+        else if (tempStyle==MMAX2Constants.LCURVE || tempStyle==MMAX2Constants.RCURVE || tempStyle==MMAX2Constants.XCURVE)            
+        {
+            for (int z=0;z<size-1;z++)
+            {
+                x1 = X_points[z];
+                y1 = Y_points[z];
+                x2 = X_points[z+1];
+                y2 = Y_points[z+1];
+                c = new QuadCurve2D.Double();
+                ctrlPoint = MMAX2Utils.calculateControlPoint(x1,y1,x2,y2,markableRelation.getLineStyle());
+                c.setCurve((double)x1,(double)y1,(double)ctrlPoint.getX(),(double)ctrlPoint.getY(),(double)x2,(double)y2);
+                graphics.draw(c);
+            }
+        }
+    }
+    
+    public final boolean containsMatchingMarkableFromLevel(String markableProducingQuery, MarkableLevel level)
+    {    
+        boolean result = false;
+        
+        MMAX2QueryTree tree = null;
+        try
+        {
+            tree = new MMAX2QueryTree(markableProducingQuery, level);
+        }
+        catch (org.eml.MMAX2.annotation.query.MMAX2QueryException ex)
+        {
+            ex.printStackTrace();
+        }       
+        ArrayList resultList = tree.execute(null);
+        
+        for (int b=0;b<resultList.size();b++)
+        {
+            if (containsMarkable((Markable)resultList.get(b)))
+            {
+                result=true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public final boolean startsWithMatchingMarkableFromLevel(String markableProducingQuery, MarkableLevel level)
+    {    
+        boolean result = false;
+        
+        MMAX2QueryTree tree = null;
+        try
+        {
+            tree = new MMAX2QueryTree(markableProducingQuery, level);
+        }
+        catch (org.eml.MMAX2.annotation.query.MMAX2QueryException ex)
+        {
+            ex.printStackTrace();
+        }       
+        ArrayList resultList = tree.execute(null);
+        
+        for (int b=0;b<resultList.size();b++)
+        {
+            if (startsWithMarkable((Markable)resultList.get(b)))
+            {
+                result=true;
+                break;
+            }
+        }
+        return result;
+    }
+    
+       
+    
+    //////
+    
+    
+    public final MarkableRelation getMarkableRelation()
+    {
+        return markableRelation;
+    }
+        
+    public final boolean containsMarkable(Markable markable)
+    {
+        if (ordered)
+        {
+           return orderedSet.contains(markable);
+        }
+        else
+        {
+            return unorderedSet.contains(markable);
+        }
+    }
+
+    public final boolean startsWithMarkable(Markable markable)
+    {
+        if (ordered)
+        {
+           return ((Markable)orderedSet.get(0)).equals((Markable)markable);
+        }
+        else
+        {
+            System.err.println("startsWith undefined for unordered MarkableSet!");
+            return false;
+        }
+    }
+
+    public final Markable getInitialMarkable()
+    {
+        Markable result = null;
+        if (ordered)
+        {
+            result =  (Markable)orderedSet.get(0);
+        }
+        return result;
+    }
+        
+    public final Markable[] getOrderedMarkables()
+    {
+        ArrayList<Markable> temp = new ArrayList<Markable>(orderedSet);
+        return (Markable[]) temp.toArray(new Markable[0]);   
+    }
+    
+    public final int getMarkableIndex(Markable _markable)
+    {
+        int index = -1;
+        if (ordered)
+        {
+            for (int z=0;z<orderedSet.size();z++)
+            {
+                if (((Markable)orderedSet.get(z))==_markable)
+                {
+                    index = z;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            System.err.println("Error: getMarkableIndex is undefined for unordered MarkableSets!");
+        }
+        return index;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    public final boolean matches(int requiredSize, ArrayList startsWithMarkables)
+    {
+        // This way, result will be true of both attributes are not set
+        boolean result = true;
+        boolean sizeMatch = false;
+        boolean startsWithMatch = false;
+        
+        if (requiredSize!=-1)
+        {
+            if (ordered)
+            {
+                sizeMatch = (requiredSize == orderedSet.size());
+            }
+            else
+            {
+                sizeMatch = (requiredSize == unorderedSet.size());
+            }
+        }
+        
+        if (startsWithMarkables != null)
+        {
+            startsWithMatch = startsWithMarkables.contains((Markable)orderedSet.get(0));
+        }
+        
+        
+        if (requiredSize!=-1 && startsWithMarkables!=null)
+        {
+            // Both criteria were specified and must therefore match
+            if (sizeMatch && startsWithMatch)
+            {
+                result=true;
+            }
+            else
+            {
+                result = false;
+            }
+        }
+        else if (requiredSize!=-1)
+        {
+            // Only the size criterion was specified
+            if (sizeMatch) 
+            {
+                result = true;
+            }
+            else
+            {
+                result = false;
