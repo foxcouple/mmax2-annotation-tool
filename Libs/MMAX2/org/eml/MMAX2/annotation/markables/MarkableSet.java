@@ -611,3 +611,116 @@ public class MarkableSet implements Renderable, MarkableSetAPI
             else
             {
                 result = false;
+            }
+        }
+        else if (startsWithMarkables!=null)
+        {
+            // Only the startsWith criterion was specified
+            if (startsWithMatch) 
+            {
+                result = true;
+            }
+            else
+            {
+                result = false;
+            }
+        }
+                    
+        return result;
+    }
+    
+    public final ArrayList getVilainRepresentation()
+    {
+        ArrayList result = new ArrayList();
+        if (ordered)
+        {
+           for (int z=0;z<orderedSet.size()-1;z++)
+           {
+               String entry = MarkableHelper.getSpan((Markable)orderedSet.get(z))+" "+MarkableHelper.getSpan((Markable)orderedSet.get(z+1));
+               result.add(entry);
+           }
+        }
+        else
+        {
+            Markable[] temp = (Markable[])unorderedSet.toArray(new Markable[1]);
+            for (int z=0;z<temp.length-1;z++)
+            {
+                //String entry = MarkableHelper.getSpan((Markable)unorderedSet.get(z))+" "+MarkableHelper.getSpan((Markable)unorderedSet.get(z+1));
+                String entry = MarkableHelper.getSpan(temp[z])+" "+MarkableHelper.getSpan(temp[z+1]);
+                result.add(entry);
+            }
+        }
+        
+        return result;
+    }
+
+    public final ArrayList getIDVilainRepresentation()
+    {
+        ArrayList result = new ArrayList();
+        if (ordered)
+        {
+           for (int z=0;z<orderedSet.size()-1;z++)
+           {
+               String entry = ((Markable)orderedSet.get(z)).getID()+" "+((Markable)orderedSet.get(z+1)).getID();
+               result.add(entry);
+           }
+        }
+        else
+        {
+            Markable[] temp = (Markable[])unorderedSet.toArray(new Markable[1]);
+            for (int z=0;z<temp.length-1;z++)
+            {
+                String entry = ((Markable)orderedSet.get(z)).getID()+" "+((Markable)orderedSet.get(z+1)).getID();
+                result.add(entry);
+            }
+        }
+        
+        return result;
+    }
+    
+    public final HashSet getSetOfStrings()
+    {
+        HashSet result = new HashSet();
+        if (ordered)
+        {
+            // Iterate over markables that are ordered in disc order
+           for (int z=0;z<orderedSet.size();z++)
+           {
+               // Add each markable's span to result set
+               result.add(MarkableHelper.getSpan((Markable)orderedSet.get(z)));
+           }
+        }
+        else
+        {          
+            Markable[] temp = (Markable[])unorderedSet.toArray(new Markable[1]);
+            for (int z=0;z<temp.length;z++)
+            {
+                result.add(MarkableHelper.getSpan(temp[z]));
+            }
+        }
+        return result;
+    }
+    
+    public final int getSize()
+    {
+        return size;
+    }  
+    
+    public final String toString()
+    {
+        return getInitialMarkable().toString().toUpperCase()+" ["+size+" elements]";
+    }
+    
+    public final void removeMeFromMarkableRelation()
+    {
+        markableRelation.removeMarkableSet(this);
+        size=0;
+    }
+        
+    
+    public void setFlagLevel(int _level) 
+    {
+
+    }
+    
+}
