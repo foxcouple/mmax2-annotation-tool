@@ -349,3 +349,190 @@ public class MMAX2AnnotationScheme implements AnnotationSchemeAPI
         String currentLine="";
         try
         {
+            while((currentLine=abbrevReader.readLine())!=null)
+            {
+                result=result+"\n"+currentLine;
+            }                        
+        }
+        catch (java.io.IOException ex)	{ ex.printStackTrace(); }
+
+        try								{ abbrevReader.close(); }
+        catch (java.lang.Exception ex) 	{ }
+        return result;
+    }
+    
+    public UIMATypeMapping getUIMATypeMapping()
+    {
+    	return uimaTypeMapping;
+    }
+    
+    public final void setAttributePanelContainer(MMAX2AttributePanelContainer _container)
+    {
+        attributepanel.setAttributePanelContainer(_container);
+    }
+
+    public String getSchemeFileName()
+    {
+        return schemeFileName;
+    }    
+    
+    public final void showAnnotationHint(String hint, boolean _lock, String _att)
+    {      
+        if (mmax2!=null && mmax2.getCurrentDiscourse().getCurrentMarkableChart().attributePanelContainer.getUseAnnotationHint())
+        {
+            if (hintLocked)
+            {
+                // The currently displayed hint is locked
+            	// What was 'locking' again ... ???  :-| 
+                // So a normal hint should not be displayed unless it locks as well
+                if (_lock)
+                {
+                    // The new hint is to be locked
+                    // If the new one is the same as the currentlocked one, just unlock
+                    //if (_att.equals(currentAttributeHintedAt))
+                	// For 1.15
+                    if (_att.equalsIgnoreCase(currentAttributeHintedAt)) { hintLocked = false; }
+                    else
+                    {
+                        // We want to lock another one
+                        getCurrentAttributePanel().getContainer().hintToFront.setSelected(true);
+                        mmax2.showAnnotationHint(hint,_att+" (locked)");
+                        getCurrentAttributePanel().getContainer().hintToFront.setSelected(false);
+                        hintLocked = true;
+                        currentAttributeHintedAt = _att;
+                    }
+                }
+            }
+            else
+            {
+                // The current hint is not locked
+                if (_lock)
+                {
+                    getCurrentAttributePanel().getContainer().hintToFront.setSelected(true);
+                    mmax2.showAnnotationHint(hint,_att+" (locked)");
+                    getCurrentAttributePanel().getContainer().hintToFront.setSelected(false);
+                    hintLocked = true;
+                    currentAttributeHintedAt = _att;
+                }
+                else
+                {
+                    mmax2.showAnnotationHint(hint,_att);
+                    currentAttributeHintedAt = _att;                                        
+                }
+            }
+        }
+    }
+
+    public final void hideAnnotationHint()
+    {
+        if (mmax2 != null && !hintLocked && mmax2.getCurrentDiscourse().getCurrentMarkableChart().attributePanelContainer.getUseAnnotationHint())
+        {
+            mmax2.hideAnnotationHint();
+        }
+    }
+
+    public final void annotationHintToFront()
+    {
+        if (mmax2 != null) { mmax2.annotationHintToFront(); }
+    }
+
+    public final void annotationHintToBack()
+    {
+        if (mmax2 != null) { mmax2.annotationHintToBack(); }
+    }
+    
+///////////      
+    
+    public MMAX2Attribute[] getAttributesByType(int type)
+    {
+        ArrayList tempresult = new ArrayList();
+        MMAX2Attribute currentAttribute; 
+        for (int p=0;p<attributes.size();p++)
+        {
+            currentAttribute = (MMAX2Attribute) attributes.get(p);
+            if (currentAttribute.getType()==type) { tempresult.add(currentAttribute); }
+        }
+        MMAX2Attribute realresult[] = new MMAX2Attribute[tempresult.size()];
+        for (int z=0;z<tempresult.size();z++) { realresult[z] = (MMAX2Attribute) tempresult.get(z); }
+        return realresult;        
+    }
+
+    public MMAX2Attribute getUniqueAttributeByType(int type)
+    {
+    	// 'unique' means 'just return the first one' ...
+        MMAX2Attribute currentAttribute; 
+        for (int p=0;p<attributes.size();p++)
+        {
+            currentAttribute = (MMAX2Attribute) attributes.get(p);
+            if (currentAttribute.getType()==type) { return currentAttribute; }
+        }
+        return null;
+    }
+        
+    
+    public MMAX2Attribute[] getAttributesByType(int type1, int type2)
+    {
+        ArrayList tempresult = new ArrayList();
+        MMAX2Attribute currentAttribute; 
+        for (int p=0;p<attributes.size();p++)
+        {
+            currentAttribute = (MMAX2Attribute) attributes.get(p);
+            if (currentAttribute.getType()==type1 || currentAttribute.getType()==type2)
+            {
+                tempresult.add(currentAttribute);
+            }
+        }
+        MMAX2Attribute realresult[] = new MMAX2Attribute[tempresult.size()];
+        for (int z=0;z<tempresult.size();z++)
+        {
+            realresult[z] = (MMAX2Attribute) tempresult.get(z);
+        }
+        return realresult;        
+    }
+
+    public MMAX2Attribute getUniqueAttributeByType(int type1, int type2)
+    {
+        MMAX2Attribute currentAttribute; 
+        for (int p=0;p<attributes.size();p++)
+        {
+            currentAttribute = (MMAX2Attribute) attributes.get(p);
+            if (currentAttribute.getType()==type1 || currentAttribute.getType()==type2)
+            {
+                return currentAttribute;
+            }
+        }
+        return null;
+    }
+    
+    
+    public MMAX2Attribute[] getAttributesByName(String nameRegExp)
+    {
+        ArrayList tempResult = new ArrayList();
+        MMAX2Attribute currentAttribute; 
+        for (int p=0;p<attributes.size();p++)
+        {
+            currentAttribute = (MMAX2Attribute) attributes.get(p);
+            if (currentAttribute.getDisplayName().toLowerCase().matches(nameRegExp))
+            {
+            	tempResult.add(currentAttribute);
+            }
+        }
+        MMAX2Attribute realresult[] = new MMAX2Attribute[tempResult.size()];
+        for (int z=0;z<tempResult.size();z++)
+        {
+            realresult[z] = (MMAX2Attribute) tempResult.get(z);
+        }
+        return realresult;        
+    }
+
+    public MMAX2Attribute getUniqueAttributeByName(String nameRegExp)
+    {
+        MMAX2Attribute currentAttribute; 
+        for (int p=0;p<attributes.size();p++)
+        {
+            currentAttribute = (MMAX2Attribute) attributes.get(p);
+            if (currentAttribute.getDisplayName().toLowerCase().matches(nameRegExp))
+            {
+            	return currentAttribute;
+            }
+        }
