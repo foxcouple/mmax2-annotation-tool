@@ -233,3 +233,60 @@ public class SimpleMarkableCustomization
                         match = true;
                         break;
                     }
+                }
+                else
+                {
+                    if (MarkableHelper.matchesAny(markable, matchingCriteria[z])) 
+                    {
+                        match = true;
+                        break;
+                    }                    
+                }
+            }
+        }
+        else
+        {
+            System.out.println("Illegal connector "+connector);
+        }
+
+        if (match) 
+        {
+            result = new SimpleAttributeSet(attributes);
+            for (int z=0;z<attributeNamesForColors.size();z++)
+            {
+            	MMAX2Attribute tempAttrib = null;
+                MMAX2Attribute[] tempAttribs = level.getCurrentAnnotationScheme().getAttributesByNameAndType("^"+(String)attributeNamesForColors.get(z)+"$", AttributeAPI.MARKABLE_SET, AttributeAPI.MARKABLE_POINTER);
+                if (tempAttribs.length > 0)
+                {
+                	tempAttrib = tempAttribs[0];
+                }
+                if (tempAttrib != null)
+                {
+                    MarkableRelation relation = tempAttrib.getMarkableRelation();
+                    if (relation != null)
+                    {
+                        relation.setLineColor((Color)relationColors.get(z));
+                    }
+                }
+            }
+            for (int z=0;z<attributeNamesForStyles.size();z++)
+            {
+            	MMAX2Attribute tempAttrib = null;
+                MMAX2Attribute[] tempAttribs = level.getCurrentAnnotationScheme().getAttributesByNameAndType("^"+(String)attributeNamesForStyles.get(z)+"$", AttributeAPI.MARKABLE_SET, AttributeAPI.MARKABLE_POINTER);
+                if (tempAttribs.length > 0)
+                {
+                	tempAttrib = tempAttribs[0];
+                }
+                if (tempAttrib != null)
+                {
+                    MarkableRelation relation = tempAttrib.getMarkableRelation();
+                    if (relation != null)
+                    {
+                        relation.setLineStyle((Integer)relationStyles.get(z));
+                    }
+                }
+            }
+        }
+        return result;
+    }   
+}
