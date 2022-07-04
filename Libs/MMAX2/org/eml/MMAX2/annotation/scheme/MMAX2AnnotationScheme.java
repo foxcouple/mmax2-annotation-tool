@@ -536,3 +536,221 @@ public class MMAX2AnnotationScheme implements AnnotationSchemeAPI
             	return currentAttribute;
             }
         }
+     return null;        
+    }
+    
+
+            
+    public MMAX2Attribute[] getAttributesByNameAndType(String name, int type)
+    {        
+    	ArrayList tempResult = new ArrayList();
+        MMAX2Attribute[] temp = getAttributesByType(type);
+        for (int b=0;b<temp.length;b++)
+        {
+            if (temp[b].getDisplayName().toLowerCase().matches(name))
+            {
+            	tempResult.add(temp[b]);
+            }
+        }
+        MMAX2Attribute realresult[] = new MMAX2Attribute[tempResult.size()];
+        for (int z=0;z<tempResult.size();z++)
+        {
+            realresult[z] = (MMAX2Attribute) tempResult.get(z);
+        }
+        return realresult;        
+    }
+
+    public MMAX2Attribute getUniqueAttributeByNameAndType(String name, int type)
+    {        
+        MMAX2Attribute[] temp = getAttributesByType(type);
+        for (int b=0;b<temp.length;b++)
+        {
+            if (temp[b].getDisplayName().toLowerCase().matches(name))
+            {
+            	return temp[b];
+            }
+        }
+        return null;
+    }
+    
+    
+    public MMAX2Attribute[] getAttributesByNameAndType(String name, int type1, int type2)
+    {        
+    	ArrayList tempResult = new ArrayList();
+        MMAX2Attribute[] temp = getAttributesByType(type1, type2);
+        for (int b=0;b<temp.length;b++)
+        {
+            if (temp[b].getDisplayName().toLowerCase().matches(name))
+            {
+            	tempResult.add(temp[b]);
+            }
+        }
+        MMAX2Attribute realresult[] = new MMAX2Attribute[tempResult.size()];
+        for (int z=0;z<tempResult.size();z++)
+        {
+            realresult[z] = (MMAX2Attribute) tempResult.get(z);
+        }
+        return realresult;        
+    }
+
+    public MMAX2Attribute getUniqueAttributeByNameAndType(String name, int type1, int type2)
+    {        
+        MMAX2Attribute[] temp = getAttributesByType(type1, type2);
+        for (int b=0;b<temp.length;b++)
+        {
+            if (temp[b].getDisplayName().toLowerCase().matches(name))
+            {
+            	return temp[b];
+            }
+        }
+        return null;
+    }
+    
+    
+    ///// 
+    
+    
+    public final void setMMAX2(MMAX2 _mmax2)
+    {
+        mmax2 = _mmax2;
+    }
+    
+    /** This method produces an ArrayList of those MMAX2Attributes in annotation scheme order that do not depend
+        on any other attribute. Independence is determined by checking if the attributes's dependsOn list is empty. */
+    public final ArrayList<MMAX2Attribute> getIndependentAttributes(boolean enable)
+    {
+        // Create list to accept result
+        ArrayList<MMAX2Attribute> tempresult = new ArrayList<MMAX2Attribute>();       
+        MMAX2Attribute currentAttribute=null; 
+        
+        // Iterate over all Attributes defined in this scheme, in annotation scheme order
+        for (int p=0;p<attributes.size();p++)
+        {
+            // Get current attribute
+            currentAttribute = (MMAX2Attribute) attributes.get(p);            
+            /* Reset to Default (this will also set 'empty' for relations now!)*/
+            currentAttribute.toDefault();
+            
+            if (currentAttribute.isIndependent())
+            {
+                if (enable)
+                {
+                    // Enable if required
+                    currentAttribute.setEnabled(!(currentAttribute.getIsReadOnly()));
+                }
+                // Add at any rate to list of independent attributes
+                tempresult.add(currentAttribute);
+            }
+        }
+        return tempresult;
+    }
+    
+    public MMAX2AttributePanel getAttributePanel()
+    {
+        return attributepanel;
+    }
+    
+    /** This method is called from the mmaxattribute callingAttribute when the user changed 
+        some value on it by clicking a button or changing the selection in a listbox. 
+        This method also calls itself recursively. */
+    public void valueChanged(MMAX2Attribute callingAttribute, MMAX2Attribute topCallingAttribute, MMAX2Attribute[] oldRemovedAttributes, int position, ArrayList requestedAttributesAsList)
+    {                
+        // If the call to this method occurs, some actual change has happened
+        // So set attribute window to dirty
+        attributepanel.setHasUncommittedChanges(true);
+        // Any callingAttribute has been set to frozen == false at this point
+        MMAX2Attribute[] removedAttributes = null;
+        
+        // Check if oldRemovedAttributes have been handed in
+        if (oldRemovedAttributes != null)
+        {            
+            // Yes, so we are in a recursion
+            removedAttributes = oldRemovedAttributes;
+        }
+        else
+        {
+            // There is no recursion yet
+            // Remove and store those Attributes (if any) from display that depended on the one whose 
+            // value was changed.
+            // Some or all of these attributes may be valid again, because they can be either 
+            // _identical_ to ones that are requested, or they may be different, but cover the same 
+            // attributes. 
+            // Something can be removed only if current attribute is branching
+            if (callingAttribute.getIsBranching())
+            {        
+                // This removes all directly and indirectly dependent attributes
+                removedAttributes = attributepanel.removeTrailingDependentAttributes(callingAttribute);
+            }
+        }
+        
+        // Get SchemeLevels that have to be displayed as a result of click, but do not reset them to 
+        // default, because this could alter the values of removedLevels.
+        // New: This now also covers MARKABLE_POINTER relations
+        MMAX2Attribute[] requestedAttributes = callingAttribute.getNextAttributes(false);        
+                                            
+        if (removedAttributes != null && requestedAttributes.length != 0)
+        {
+            // Some levels were added and some were removed */
+            // So transfer those selections in removedLevels that are valid for requestedLevels to the latter. */
+            // There may be references to identical objects in the two arrays, if a level is removed and added at the same time. */
+            // Frozen levels will be catered for in mapSelections !!
+            mapSelections(removedAttributes, requestedAttributes);   
+            
+            // Now, attributes in requestedAttributes have either been set to the value they had in 
+            // removedAttributes, or to the value some attribute of the same name in removedAttributes 
+            // had or to default, in case either the setting failed or the requestedAttribute was not 
+            // in removedAttributes at all, in which case it was defaulted from the beginning.            
+            
+            // The markable may still have some (temporarily undefined or 'extra' attributes which could now be applicable                                    
+            // The current markable may have values for the requested levels which are NOT in the set retrieved above
+            // Iterate over all requestedAttributes. These might also have been in removedAttributes
+            for (int o=0;o<requestedAttributes.length;o++)
+            {
+                // Get current requested attribute
+                MMAX2Attribute currentSchemeLevel = (MMAX2Attribute) requestedAttributes[o];
+                // Get current markable value from Markable's attribute collection (may be different 
+                // from Attribute window!!)
+                // For 1.15: This now returns display attributename
+                String currentMarkableValue = attributepanel.currentMarkable.getAttributeValue(currentSchemeLevel.getDisplayName());
+                
+                if (currentMarkableValue != null && currentMarkableValue.equals("")==false)
+                {
+                    // The currently selected Markable has some non-null value for the current attribute
+                    // This can only be the case if the user earlier opted to keep some invalid value,
+                    // and if the attribute was not also removed:
+                    // I.E.: An attribute becomes newly available for which the markable still has some old value
+                    // This can be an attribute that is still available after value selection
+                    if (currentSchemeLevel.isDefined(currentMarkableValue)==false)
+                    {
+                        
+                        // Remove mechanism for keeping invalid values
+                        // New strategy: Just overwrite
+                        currentSchemeLevel.setIsFrozen(false,"");                                                
+                        
+                    }// isDefined==false
+                    else
+                    {
+                        // The current markable has a value which is defined for the current 
+                        // Attribute, but which was not set from removedLevels
+                        if (currentSchemeLevel.oldValue.equals("")==false)
+                        {
+                            currentSchemeLevel.setSelectedValue(currentSchemeLevel.oldValue, true);
+                            currentSchemeLevel.oldValue="";
+                        }
+                        else
+                        {
+                            currentSchemeLevel.setSelectedValue(currentMarkableValue, true);                            
+                        }
+                    }
+                }
+            }// for Requestedlevels                                    
+        }
+        else if (removedAttributes != null)
+        {
+            // Levels are removed, but none are requested (so nothing to be added later) 
+            // Make sure requested is valid
+            requestedAttributes = new MMAX2Attribute[0];
+
+            // The following is obsolete in the new strategy, since
+            // frozen attributes are not possible any more (in new strategy)
+            
