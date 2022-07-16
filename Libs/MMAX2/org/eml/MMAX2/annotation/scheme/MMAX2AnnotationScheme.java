@@ -754,3 +754,202 @@ public class MMAX2AnnotationScheme implements AnnotationSchemeAPI
             // The following is obsolete in the new strategy, since
             // frozen attributes are not possible any more (in new strategy)
             
+            // Make sure frozen ones among the removed ones are retained            
+            for (int p=0;p<removedAttributes.length;p++)
+            {                
+                if (((MMAX2Attribute) removedAttributes[p]).getIsFrozen())
+                {
+                    System.err.println("Frozen: "+((MMAX2Attribute) removedAttributes[p]).getDisplayName());
+                    if (attributepanel.keepables.contains(((MMAX2Attribute) removedAttributes[p]).getDisplayName())==false)
+                    {
+                        attributepanel.keepables.add(((MMAX2Attribute) removedAttributes[p]).getDisplayName());
+                    }
+                    System.err.println("Keeping in keepables. Size:"+attributepanel.keepables.size());
+                }
+            }                
+        }
+        else if (requestedAttributes != null)
+        {
+            // Levels are requested, but none are removed                                        
+            // The current markable may have values for the requested levels which are NOT in the set retrieved above
+            for (int o=0;o<requestedAttributes.length;o++)
+            {
+                MMAX2Attribute currentSchemeLevel = (MMAX2Attribute) requestedAttributes[o];
+                String currentMarkableValue = attributepanel.currentMarkable.getAttributeValue(currentSchemeLevel.getDisplayName());
+                if (currentMarkableValue != null && currentMarkableValue.equals("")==false) // && currentMarkableValue.equalsIgnoreCase(this._attributeWindow.currentMarkable.getDefaultValue())==false)
+                {
+                    //hasValue
+                    // The currently selected Markable has some non-null value for the current attribute
+                    if (currentSchemeLevel.isDefined(currentMarkableValue)==false)
+                    {
+                        
+                        // Remove mechanism for keeping invalid values
+                        // New strategy: Just overwrite
+                        currentSchemeLevel.setIsFrozen(false,"");
+                        
+                    }// isDefined==false
+                    else
+                    {
+                        // The current markable has a value which is defined for the current SchemeLevel, but which was not set from removedLevels
+                        currentSchemeLevel.setSelectedValue(currentMarkableValue, true);
+                    }
+                }//HasValue
+            }// for Requestedlevels            
+        }// requestedLevels != null
+        else
+        {
+            // Nothing was requested or removed
+            // Do this to also set callingAttribute.currentIndex
+            callingAttribute.setSelectedIndex(position);
+        }
+                 
+        if (requestedAttributesAsList.size()==0)
+        {
+            // There was no recursion yet, so simply add current requested attributes at top
+            // of list of attributes to display
+            requestedAttributesAsList.addAll(java.util.Arrays.asList(requestedAttributes));
+        }
+        else
+        {
+            // There already is a recursion, so add current requested attributes directly after
+            // attribute that triggered the recursion, i.e. callingAttribute
+            int movingIndex = 0;
+            for (int o=0;o<requestedAttributes.length;o++)
+            {
+                if (requestedAttributesAsList.contains(requestedAttributes[o])==false)
+                {
+                    requestedAttributesAsList.add(requestedAttributesAsList.indexOf(callingAttribute)+movingIndex+1, requestedAttributes[o]);       
+                    movingIndex++;
+                }
+            }
+        }
+        
+        //for (int n=0;n<requestedAttributesAsList.size();n++)
+        for (int n=0;n<requestedAttributes.length;n++)
+        {
+            //MMAX2Attribute current = (MMAX2Attribute) requestedAttributesAsList.get(n);
+            MMAX2Attribute current = requestedAttributes[n];
+            if (current.getIsBranching() && current.getNextAttributes(false).length !=0)
+            {
+                valueChanged(current,topCallingAttribute,removedAttributes,current.getSelectedIndex(),requestedAttributesAsList);
+            }
+        }
+                
+        // Now, add attributes below the one whose value was changed 
+        attributepanel.addAttributesAfter(((MMAX2Attribute[])requestedAttributesAsList.toArray(new MMAX2Attribute[0])),topCallingAttribute);                
+        try
+        {
+            /* A change has occurred, which must be applicable and undoable */ 
+            if (attributepanel.getContainer().isAutoApply() == false)
+            {
+                attributepanel.getContainer().setApplyEnabled(true);
+                attributepanel.getContainer().setUndoEnabled(true);
+            }
+            else
+            {
+                System.out.println("---> Auto-Apply!");
+                // NEW 25th February 2005: Always clear keepables on apply
+                attributepanel.keepables.clear();
+                attributepanel.setMarkableAttributes(attributepanel.currentMarkable,true);
+                // NEW: FIX 'dirty after auto-apply'
+                attributepanel.currentMarkable.getMarkableLevel().setIsDirty(true,true);
+            }
+            attributepanel.rebuild();
+        }
+        catch (java.lang.NullPointerException ex)
+        {    
+            
+        }
+        
+        attributepanel.getScrollPane().scrollRectToVisible(attributepanel.getLastAttribute().getVisibleRect());
+        attributepanel.invalidate();
+        attributepanel.repaint();
+        attributepanel.getContainer().invalidate();
+        attributepanel.getContainer().repaint();
+    }// end Method    
+    
+    /** This method transfers those selections in removedLevels that are valid for requestedLevels to the latter. 
+        If a requestedLevel cannot be set according to a removedLevel, it is set to default. 
+        // wrong: This method will not alter attributes of type MARAKABLE_SET!
+        New: removed levels of type MARKABLE_POINTER and MARKABLE_SET are now correctly mapped / removed
+        The two parameter arrays may contain references to the same objects ! */
+    public void mapSelections(MMAX2Attribute[] removedLevels, MMAX2Attribute[] requestedLevels)  
+    {  
+        int remLen = removedLevels.length;
+        int reqLen = requestedLevels.length;
+        
+        MMAX2Attribute currentRequestedLevel = null;
+        String currentRequestedAttribute = "";
+        MMAX2Attribute currentRemovedLevel = null;        
+        String currentRemovedAttribute = "";   
+        String currentRemovedValue = "";   
+        boolean found = false;
+        
+        /* Iterate over all requested SchemeLevels, which have NOT been set to default yet. */
+        for (int z=0;z<reqLen;z++)
+        {
+            /* Get current requestedLevel */
+            currentRequestedLevel = requestedLevels[z];
+            
+            /* Iterate over all removed SchemeLevels */
+            for(int u=0;u<remLen;u++)
+            {
+                /* Get current removedLevel */
+                currentRemovedLevel = removedLevels[u];                
+                
+                if (currentRemovedLevel.getID().equals(currentRequestedLevel.getID()))
+                {
+                    /* The same (identical) SchemeLevel has been removed and requested at the same time */
+                    /* Do nothing, most recent value will be kept (somehow) */
+                    // Set preferred selected value
+                    currentRemovedLevel.oldValue=currentRemovedLevel.getSelectedValue();
+                    found = true;
+                }                
+                if (currentRemovedLevel.getIsFrozen()) 
+                {
+                    System.err.println("Frozen: "+currentRemovedLevel.getDisplayName());
+                    if (attributepanel.keepables.contains(currentRemovedLevel.getDisplayName())==false) 
+                    {
+                        attributepanel.keepables.add(currentRemovedLevel.getDisplayName());
+                        System.err.println("Keeping in keepables. Size:"+attributepanel.keepables.size());
+                    }
+                }                
+            }// for all removed levels
+            
+            /* Here, all removed levels have been checked against the current requestedLevel */
+            if (found == false)
+            {
+                /* The current requested level is NOT removed at the same time. */
+                /* Check if there is a level with the same _attribute name_ removed at the same time. */
+                
+                /* Again iterate over all removed SchemeLevels */
+                for(int u=0;u<remLen;u++)
+                {
+                    /* Get current removedLevel */
+                    currentRemovedLevel = removedLevels[u];
+                
+                    /* Get Attribute on current requestedLevel */
+                    // This returns the cased name now (=DisplayName)
+                    currentRequestedAttribute = currentRequestedLevel.getDisplayName();
+                    /* Get Attribute on current removedLevel */
+                    // This returns the cased name now
+                    currentRemovedAttribute = currentRemovedLevel.getDisplayName();
+                                                                    
+                    //if(currentRequestedAttribute.equals(currentRemovedAttribute))
+                    // For 1.15
+                    if(currentRequestedAttribute.equalsIgnoreCase(currentRemovedAttribute))
+                    {
+                        /* We are about to remove a level which has the attribute name of the current requested one, but is NOT identical. */
+                        /* Check whether its value can be copied to requestedLevel */
+                        /* This is true if the value in removedLevel exists in requestedLevel */
+                        currentRemovedValue = currentRemovedLevel.getSelectedValue();
+                        /* Try to copy the value from removed to requested level */                        
+                        // oldValue has preference over currentRemovedValue, because current could be 'none' or some other meta-value that we do not want to map
+
+                        if (currentRequestedLevel.oldValue.equals("")==false)
+                        {
+                            // currentRequestedlevel has a preferred reset value, so try to set that. If it fails, currentRequested will be set to default
+                            currentRequestedLevel.setSelectedValue(currentRequestedLevel.oldValue,true);
+                        }
+                        /* If this does fail, currentRequestedLevel keeps its former value */
+                        else if (currentRequestedLevel.setSelectedValue(currentRemovedValue,true)==false)
