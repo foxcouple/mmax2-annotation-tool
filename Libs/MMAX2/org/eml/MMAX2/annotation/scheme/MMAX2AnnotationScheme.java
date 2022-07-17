@@ -953,3 +953,181 @@ public class MMAX2AnnotationScheme implements AnnotationSchemeAPI
                         }
                         /* If this does fail, currentRequestedLevel keeps its former value */
                         else if (currentRequestedLevel.setSelectedValue(currentRemovedValue,true)==false)
+                        {
+                            /* Copying fails if the value is not valid for requested  */
+                            // Leave current requested value as it was (will be set to default by above call)
+                            // Store currentRemovedValue as preferred default for current removed level
+                            currentRemovedLevel.oldValue=currentRemovedValue;
+                        }
+                        else
+                        {
+                            // setSelectedValue succeeded 
+                            currentRemovedLevel.oldValue = "";
+                        }                        
+                    }                
+                }// for u (all removed levels, 2nd iteration)
+            }// found == false
+        }// for z (all requested levels )  
+    }// end method
+   
+    public void addValueIDToAttributeIDMapping(String valueID, String attributeID)
+    {
+        this.valueIDsToAttributeIDs.put(valueID, attributeID);
+    }
+    
+    
+    public void resetAllAttributes()
+    {
+        for (int z=0;z<this.size;z++)
+        {
+            ((MMAX2Attribute) this.attributes.get(z)).toDefault();
+            ((MMAX2Attribute) this.attributes.get(z)).setIsFrozen(false,"");
+        }               
+    }
+    
+    /** This method resets the AttributeWindow to the initial state as defined in this AnnotationScheme */
+    public void reset()
+    {
+        attributepanel.removeAllAttributes();
+        resetAllAttributes();        
+        MMAX2Attribute[] attributes = (MMAX2Attribute[])getInitialAttributes().toArray(new MMAX2Attribute[0]);        
+        attributepanel.addAttributes(attributes);             
+    }
+    
+    public void setEnabled(boolean status)
+    {
+        MMAX2Attribute currentAttribute; 
+        for (int p=0;p<attributes.size();p++)
+        {
+            currentAttribute = (MMAX2Attribute) attributes.get(p);
+            currentAttribute.setEnabled(status);
+        }
+    }
+
+    /** This method is used to create the list of attributes to be applied to new markables. It also
+        supplies the attributes to be displayed in the attribute panel if no markable is selected. It
+        returns the list of independent attributes with default values, expanded to also contain
+        all dependent attributes. */
+    public ArrayList getInitialAttributes()
+    {
+        // Get list of independent attributes in scheme order
+        ArrayList independentAttributes = getIndependentAttributes(false);
+        // The list now contains all independent attributes, and nothing else
+        
+        for (int z=0;z<independentAttributes.size();z++)
+        {
+            // Get current attribute
+            MMAX2Attribute currentAttribute = (MMAX2Attribute) independentAttributes.get(z);
+            // Get array of attributes dependent on current one (may be empty)
+            MMAX2Attribute[] dependentAttributes = currentAttribute.getNextAttributes(true);
+            // If there are any dependent attributes
+            if (dependentAttributes.length > 0)
+            {
+                // Iterate over dependet attributes
+                for (int b=0;b<dependentAttributes.length;b++)
+                {
+                    // Only if not already contained (possible?)
+                    if (independentAttributes.contains(dependentAttributes[b])==false)
+                    {
+                        // Add directly after dependee, in 'next' order
+                        independentAttributes.add(z+1+b, dependentAttributes[b]);
+                    }
+                }
+            }
+        }
+        return independentAttributes;
+    }
+    
+    /** This method returns an array of MMAX2Attribute objects reflecting the attributes of Markable markable.
+        If Markable does not have any attributes, or an error occurred, only independent Attributes with default 
+        values are returned. This method handles branching independent attributes as well, and sets all defaults! 
+        This method is the central instance for enforcing annotation scheme constraints! */
+    public MMAX2Attribute[] getAttributes(Markable markable)
+    {
+        /* Copy attributes of current Markable. Processed attributes are incrementally removed from this list. */
+        /* This contains ALL attributes found in the XML representation, incl. relations. */
+        HashMap<String,String> tempattribs = new HashMap<String, String>(markable.getAttributes());        
+        
+        MMAX2Attribute currentAttribute = null;
+        String currentAttributeString = "";
+        String currentAttributeValue = "";
+        
+        // Get list of independent attributes in scheme order
+        ArrayList<MMAX2Attribute> independentAttributesAsList = getIndependentAttributes(true);        
+        // The list now contains all independent attributes, and nothing else
+        // All other attributes will be added to this list!
+        
+        /* Iterate over all independent Attributes */
+        /* Markable _must_ have a value for each of it (at least default) */
+        for (int z=0;z<independentAttributesAsList.size();z++)            
+        {
+            // Get next independent Attribute
+            currentAttribute = (MMAX2Attribute)independentAttributesAsList.get(z);
+                        
+            // Get matchable name of its attribute
+            currentAttributeString = currentAttribute.getDisplayName();
+            
+//            System.err.println(markable.getAttributes());
+            // Get value of current attribute from Markable to be displayed.
+            currentAttributeValue = markable.getAttributeValue(currentAttributeString);
+            
+//            System.err.println("Default -->"+currentAttributeString+" "+currentAttributeValue);
+            // Null will be returned if the attribute does not exist on the XML markable yet
+            if (currentAttributeValue == null) 
+            {
+                // The required independent attribute is not yet available on markable
+                // Retrieve default value
+                if (currentAttribute.getType() == AttributeAPI.MARKABLE_SET || currentAttribute.getType() == AttributeAPI.MARKABLE_POINTER)
+                {                    
+                    // For relation attributes, this means the relation is empty
+                    // So use 'empty' default value
+                    currentAttributeValue = MMAX2.defaultRelationValue;
+                }
+                else
+                {
+                    // Else empty simply means empty
+                    currentAttributeValue = "";
+                }
+            }
+            
+            /* Try to set Attribute according to Markable's value for this attribute. */
+            /* If this fails, the value is illegal/invalid for this attribute, and it will be set to default. */
+            // If the markable has the _mmax default value_ here, this will be treated as default as well, and 
+            // will always succeed
+            // This then simply means that the attribute was not yet present on the Markable
+            
+            // Use ignore = true to prevent execution of valueChanged
+            if (currentAttribute.setSelectedValue(currentAttributeValue,true)==false)
+            {                    
+                int result = -1;
+                /* Attribute value on markable is invalid for this Attribute */
+                // This means that Markable had a non-null value to which the attribute could _not_ be set !!
+                // Note: This can never fail for relations, because relations cannot have value constraints!   
+                // It can neither fail for freetext attributes
+
+                // This can only happen if the markable was never selected before and received an invalid
+                // value externally, or if it was selected earlier, but the user prompted to keep the invalid
+                // value. At any rate, invalid values can ONLY be introduced externally!
+                String message ="";
+                if (currentAttribute.getIsReadOnly() == false)
+                {            
+                    message = "Error on level '"+markable.getMarkableLevelName()+"': Value '"+currentAttributeValue.toLowerCase() +"' is undefined for attribute '"+currentAttribute.getDisplayName()+"'!";
+                    message = message + "\nDetails:\nString: "+markable.toString()+"\nSpan: "+MarkableHelper.getSpan(markable)+"\nFile: "+markable.getMarkableLevel().getMarkableFileName();
+                    message = message + "\nIt is recommended that you check your annotation!";
+                    message = message + "\n\nSelect 'Overwrite' to discard the invalid value!";
+                    message = message + "\nSelect 'Keep' to keep it!";
+                    
+                    Object[] options = { "Overwrite with default", "Keep invalid value" };
+                    result = JOptionPane.showOptionDialog(null, message, "MMAX2: Annotation inconsistency!", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,null, options, options[1]);
+                    
+                    if (result == 1 || result == JOptionPane.CLOSED_OPTION)
+                    {
+                        // The user opted to keep the invalid value, so freeze level to prevent overwriting by default value
+                        currentAttribute.setIsFrozen(true,currentAttributeValue);
+                    }
+                    else
+                    {
+                        // Unfreeze (even if not frozen before)
+                        currentAttribute.setIsFrozen(false,"");
+                        // currentAttribute is defaulted still, since setValue did not change this status
+                    }
