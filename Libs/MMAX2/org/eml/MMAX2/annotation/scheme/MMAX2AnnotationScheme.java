@@ -1318,3 +1318,188 @@ public class MMAX2AnnotationScheme implements AnnotationSchemeAPI
     		return this.attributesByLowerCasedAttributeName.containsKey(attributename.toLowerCase());
     	}
     	else
+    	{
+    		return true;
+    	}
+    }
+        
+    public int getAttributeTypeByAttributeName(String attribute)
+    {
+        int type = 0;
+        if (attribute.equals("Markable"))
+        {
+            type = AttributeAPI.FREETEXT;     
+        }
+        else if (attribute.equalsIgnoreCase("markable_text"))
+        {
+            type = MMAX2Constants.MARKABLE_TEXT;
+        }
+        else if (attribute.equalsIgnoreCase("base_level"))
+        {
+            type = MMAX2Constants.BASE_LEVEL;
+        }
+        else if (attribute.equalsIgnoreCase("level_name"))
+        {
+            type = MMAX2Constants.LEVEL_NAME;
+        }        
+        else
+        {
+            MMAX2Attribute currentAttribute = (MMAX2Attribute) this.attributesByLowerCasedAttributeName.get(attribute.toLowerCase());
+            if (currentAttribute != null) type = currentAttribute.getType();
+        }
+        return type;
+        
+    }
+    
+    public ArrayList<String> getAllAttributeNames()
+    {
+        ArrayList<String> resultlist = new ArrayList<String>();
+        Enumeration<String> allAttribs = attributesByLowerCasedAttributeName.keys();
+        while (allAttribs.hasMoreElements())
+        {
+            resultlist.add((String) allAttribs.nextElement());
+        }
+        return resultlist;
+    }
+    
+
+    /** This method returns an ArrayList of all distinct DisplayAttributeNames (cased!), irrespective of their SchemeLevels. */
+    public ArrayList getAllDistinctDisplayAttributeNames_()
+    {
+        ArrayList result = new ArrayList();
+        int attCount = this.attributes.size();
+        for ( int u=0;u<attCount;u++)
+        {
+            String currentName = ((MMAX2Attribute)attributes.get(u)).getDisplayName();
+            if (result.contains(currentName)==false)
+            {
+                result.add(currentName);
+            }
+        }
+        return result;            
+    }
+    
+    public final MMAX2AttributePanel getCurrentAttributePanel()
+    {
+        return this.attributepanel;
+    }
+    
+    public final int getSize()
+    {
+        return size;
+    }
+    public final ArrayList getAttributes()
+    {
+        return attributes;
+    }
+    public final MMAX2Attribute getAttributeByID(String id)
+    {
+        return (MMAX2Attribute)this.attributesByID.get(id);
+    }
+    
+    public final MMAX2Attribute getAttributeByName(String name)
+    {
+    	//System.err.println(name);
+        return (MMAX2Attribute)this.attributesByLowerCasedAttributeName.get(name.toLowerCase());
+    }
+    
+    
+    public final String[] getAttributeNamesByType(int type)
+    {        
+    	ArrayList temp = new ArrayList();
+    	MMAX2Attribute[] attributes = getAttributesByType(type);    	
+        for (int z=0;z<attributes.length;z++)
+        {
+        	temp.add(attributes[z].getDisplayName());
+        }
+        return (String[]) temp.toArray(new String[0]);
+    }
+    
+    /** This method returns a list of attribute names for which *all* the values in valueList are defined,
+        or empty list. valueList is a comma-separated list of values, and the entire list is enclosed in 
+        curly braces. optionalAttributeName is either empty or the name of the attribute for which the values
+        are required to be defined. This method does not return freetext attributes except for the one given in
+        optionalAttributeName. If the name of an attribute was passed in, and if this attribute is of type freetext
+        it will be contained in the result list, with a * prepended to its name. */
+    public final ArrayList getAttributeNamesForValues(String valueList, String optionalAttributeName)
+    {
+        ArrayList result = new ArrayList();
+        ArrayList allValues = new ArrayList();
+        // Trim off leading and trailing { and }
+        valueList = valueList.substring(1,valueList.length()-1);
+        StringTokenizer toki = new StringTokenizer(valueList,",");
+        // Iterate over all values in list
+        while(toki.hasMoreTokens())
+        {
+            // Get current value, and copy to list
+            allValues.add(toki.nextToken());            
+        }
+        
+        String currentValue="";
+        // Now iterate over all attributes
+        for (int z=0;z<attributes.size();z++)
+        {
+            // Get current attribute
+            MMAX2Attribute currentAttribute = (MMAX2Attribute) attributes.get(z);
+            
+            if (currentAttribute.getType() == AttributeAPI.FREETEXT && 
+                currentAttribute.getDisplayName().equalsIgnoreCase(optionalAttributeName)==false)
+            {
+                // Skip freetext attributes unless we know that the current one is the required one
+                continue;
+            }
+            // Assume that current value is defined for current attribute
+            boolean currentDefined=true;
+            // Iterate over all values
+            for (int n=0;n<allValues.size();n++)
+            {
+                // Get current value
+                currentValue = (String) allValues.get(n);
+                
+                if (currentAttribute.isDefined(currentValue)==false)
+                {
+                    // If one is undefied, skip checking all the others
+                    currentDefined=false;
+                    break;
+                }
+            }
+            if (currentDefined)
+            {
+                // The current attribute has all supplied values defined for it
+                if (currentAttribute.getType() == AttributeAPI.FREETEXT==false)
+                {
+                    // If the current attribte is not freetext, store its normal name once
+                    if (result.contains(currentAttribute.getDisplayName())==false)
+                    {
+                        result.add(currentAttribute.getDisplayName());
+                    }
+                }
+                else
+                {
+                    // If the current attribute is freetext, store  * + its name 
+                    if (result.contains("*"+currentAttribute.getDisplayName())==false)
+                    {
+                        result.add("*"+currentAttribute.getDisplayName());
+                    }                    
+                }
+            }
+        }        
+        return result;
+    }
+    
+    
+    public final void destroyDependentComponents()
+    {
+        attributesByID.clear();
+        attributesByID = null;
+        attributesByLowerCasedAttributeName.clear();
+        attributesByLowerCasedAttributeName = null;
+        for (int z=0;z<attributes.size();z++)
+        {
+            ((MMAX2Attribute) attributes.get(z)).destroy();
+        }
+        attributes.clear();
+        attributes = null;
+    }
+    
+}
