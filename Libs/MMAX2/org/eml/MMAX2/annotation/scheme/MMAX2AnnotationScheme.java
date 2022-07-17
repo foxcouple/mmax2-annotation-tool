@@ -1131,3 +1131,190 @@ public class MMAX2AnnotationScheme implements AnnotationSchemeAPI
                         currentAttribute.setIsFrozen(false,"");
                         // currentAttribute is defaulted still, since setValue did not change this status
                     }
+                }
+                else
+                {
+                    // Read-only
+                    message = "Error on read-only level '"+markable.getMarkableLevelName()+"': Value '"+currentAttributeValue.toLowerCase() +"' is undefined for attribute '"+currentAttribute.getDisplayName()+"'!";
+                    message = message + "\nDetails:\nString: "+markable.toString()+"\nSpan: "+MarkableHelper.getSpan(markable)+"\nFile: "+markable.getMarkableLevel().getMarkableFileName();                    
+                    message = message + "\nIt is recommended that you check your annotation!";
+                    Object[] options = { "Keep invalid value" };
+                    result = JOptionPane.showOptionDialog(null, message, "MMAX2: Annotation inconsistency (initial attributes)!", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,null, options, options[0]);                    
+                    // In read-only state, annotation cannot be changed, so freeze to enforce that in the attribute window
+                    currentAttribute.setIsFrozen(true,currentAttributeValue);
+                }
+            } // setSelectedValue failed
+            
+                        
+            // Now, current attribute in independentAttributesAsList is either set correctly, 
+            // or to default if above failed, or frozen
+            // From the markables's attributes, remove the one just processed
+            tempattribs.remove(currentAttributeString); // is lower case already
+            
+            // Check if the current independent attribute points to some other attributes which have to be added as well
+            if (currentAttribute.getIsBranching() && ((MMAX2Attribute[])currentAttribute.getNextAttributes(false)).length !=0)
+            {
+                // The current initial attribute does point to some other attributes
+                // Get all of them as a list
+                ArrayList<MMAX2Attribute> addees = new ArrayList<MMAX2Attribute>(java.util.Arrays.asList(currentAttribute.getNextAttributes(false)));
+                // Iterate over list of dependent attributes
+                for (int t=0;t<addees.size();t++)                
+                {
+                    // Get next dependent attribute
+                    MMAX2Attribute currentDependentAttribute = (MMAX2Attribute)addees.get(t);
+                    if (independentAttributesAsList.contains(currentDependentAttribute)==false)
+                    {
+                        // Add to result in next-span order, and directly *under* branching attribute
+                        // This will increase the length of initialAttributesAsList and thus consider dependencies
+                        // from attributes added here as well!
+                        independentAttributesAsList.add(z+1+t, currentDependentAttribute);
+                    }
+                }
+            }// the current attribute is not branching or does not point to anything in its current value            
+        }// for z; end iteration over all initial attribute
+        
+        // At this point, all initial Attributes are processed, and contained in initialAttributesAsList
+        
+        // Convert into array
+        MMAX2Attribute[] result = (MMAX2Attribute[]) independentAttributesAsList.toArray(new MMAX2Attribute[independentAttributesAsList.size()]);
+        
+        // Now tempattribs, the hash with all attributes carried by the markable, should be empty
+        Iterator<String> remainingAttributes = ((Set<String>)tempattribs.keySet()).iterator();        
+        String extraAttributesMessage = "";
+        
+        /* Iterate over all remaining attributes */
+        while (remainingAttributes.hasNext())
+        {                
+            // Get name of current remaining attribute
+            currentAttributeString = (String) remainingAttributes.next();
+            // Get attribute itself
+            //MMAX2Attribute currentMMAX2Attribute = (MMAX2Attribute) attributesByLowerCasedAttributeName.get(currentAttributeString);
+            MMAX2Attribute currentMMAX2Attribute = (MMAX2Attribute) attributesByLowerCasedAttributeName.get(currentAttributeString.toLowerCase());
+            // Get type of current attribute
+            int currentAttributeType = -1;
+            // But only if one was found
+            if (currentMMAX2Attribute != null)
+            {
+                currentAttributeType = currentMMAX2Attribute.getType();
+            }
+            
+            if ((tempattribs.get(currentAttributeString))==null || tempattribs.get(currentAttributeString).equals(""))
+            {
+                // If the value the markable has is empty, simply remove without asking
+                markable.getAttributes().remove(currentAttributeString);
+                continue;
+            }
+            else if (tempattribs.get(currentAttributeString).equalsIgnoreCase("empty"))
+            {
+                // The value is 'empty', which is special for relation attributes
+                if (currentAttributeType == AttributeAPI.MARKABLE_POINTER || currentAttributeType == AttributeAPI.MARKABLE_SET)
+                {
+                    // If the value the markable has is 'empty', simply remove without asking
+                    markable.getAttributes().remove(currentAttributeString);
+                    continue;                    
+                }
+            }            
+            /* There is a non-relation attribute remaining (span and id were not there anyway) */
+            if (currentMMAX2Attribute != null)
+            {
+                /* It is defined somewhere in the scheme, but invalid here (possibly 'from the future') */
+                /* So give a message and opt for deletion if suppress is false */
+                if (attributepanel.suppressCheck.isSelected()==false)
+                {              
+                    String tempval = "";
+                    if (markable.isDefined(currentAttributeString)) 
+                    {
+                        tempval = " ("+markable.getAttributeValue(currentAttributeString)+")";
+                    }
+                    else
+                    {
+                        tempval = " ()";
+                    }                    
+                    
+                    String message = "Attribute "+currentAttributeString+ tempval+" on level "+markable.getMarkableLevelName()+" is not defined for \nthe current annotation status of this markable!";
+                    message = message + "\nDetails:\nString: "+markable.toString()+"\nSpan: "+MarkableHelper.getSpan(markable)+"\nFile: "+markable.getMarkableLevel().getMarkableFileName();
+                    message = message + "\n\nPress 'Remove' to remove the attribute permanently!";
+                    message = message + "\nPress 'Keep' to leave markable unaltered!";                        
+                    message = message + "\n\nUse 'suppress check' to suppress messages of this type in the future!";
+                                        
+                    Object[] options = { "Remove", "Keep" };
+                    
+                    int resultval = JOptionPane.showOptionDialog(null, message, "MMAX2: Annotation inconsistency!", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,null, options, options[1]);
+                    
+                    if (resultval != 1 && resultval != JOptionPane.CLOSED_OPTION)
+                    {
+                        if (currentAttributeType == AttributeAPI.MARKABLE_SET)
+                        {
+                            // The user opted to remove from the current markable an attribute which is of type 
+                            // markable set                            
+                            MarkableChart chart = attributepanel.getContainer().getMMAX2().getCurrentDiscourse().getCurrentMarkableChart();
+                            // Get relation object pertaining tom it
+                            MarkableRelation relation = currentMMAX2Attribute.getMarkableRelation();
+                            // Get set from which to remove the markable
+                            MarkableSet setToLeave = relation.getMarkableSetWithAttributeValue(markable.getAttributeValue(currentAttributeString));
+                            // Remove markable
+                            chart.removeMarkableFromMarkableSet(markable, setToLeave, false);
+                            attributepanel.getContainer().getMMAX2().requestRefreshDisplay();
+                        }                        
+                        else if (currentAttributeType == AttributeAPI.MARKABLE_POINTER)
+                        {
+                            // The user opted to remove from the current markable an attribute which is of type 
+                            // markable pointer
+                            MarkableChart chart = attributepanel.getContainer().getMMAX2().getCurrentDiscourse().getCurrentMarkableChart();
+                            MarkableRelation relation = currentMMAX2Attribute.getMarkableRelation();
+                            chart.removeMarkablePointerWithSourceMarkable(markable,relation,false);
+                            attributepanel.getContainer().getMMAX2().requestRefreshDisplay();
+                        }                            
+                        else // freetext or nominal
+                        {
+                            // Simply remove 
+                            markable.getAttributes().remove(currentAttributeString);
+                        }
+                    }// deletion requested by user                         
+                    else
+                    {
+                        //  The attribute 'from the future' is to be kept
+                        attributepanel.keepables.add(currentAttributeString);
+                        System.err.println("Preserving "+currentAttributeString+" in keepables. Size:"+attributepanel.keepables.size());
+                    }
+                }
+                else
+                {
+                    // SuppressCheck is true. What to do with any found illegal attributes? Keep
+                    attributepanel.keepables.add(currentAttributeString);                 
+                    System.err.println("Preserving "+currentAttributeString+" in keepables. Size:"+attributepanel.keepables.size());
+                }
+            }
+            else
+            {
+                // The current remaining attribute is not defined anywhere in the AnnotationScheme
+                // So keep for later display
+                
+                // New: Ignore new system attribute mmax_level here
+                if (currentAttributeString.equalsIgnoreCase("mmax_level")==false)
+                {
+                    extraAttributesMessage = extraAttributesMessage + "\n"+currentAttributeString+" ("+tempattribs.get(currentAttributeString)+")";
+                }
+            }
+        }//while hasNext    
+        
+        if (extraAttributesMessage.equals("") == false && attributepanel.warnOnExtraAttributes.isSelected())
+        {
+            extraAttributesMessage = "The following undefined attributes were\nfound on the current Markable:\n"+extraAttributesMessage;
+            JOptionPane.showMessageDialog(null,extraAttributesMessage,"MMAX2: Potential annotation inconsistency!",JOptionPane.WARNING_MESSAGE);
+            // 1.15 Fix blank attribute panel after this message
+            attributepanel.rebuild();
+        }
+        return result; 
+    }   
+    
+    public boolean isDefined(String attributename)
+    { 
+    	if (attributename.equalsIgnoreCase("span") == false && 
+    	    attributename.equalsIgnoreCase("id") == false && 
+    	    attributename.equalsIgnoreCase("mmax_level") == false)
+    	{
+        	// if (isDebug()) { System.err.println("isDefined() ? "+attributename);}
+    		return this.attributesByLowerCasedAttributeName.containsKey(attributename.toLowerCase());
+    	}
+    	else
