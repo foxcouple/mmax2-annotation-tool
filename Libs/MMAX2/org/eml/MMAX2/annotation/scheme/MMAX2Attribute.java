@@ -417,3 +417,178 @@ public class MMAX2Attribute extends JPanel implements java.awt.event.ActionListe
                 {
                 	/* type = freetext */
                 	int ft_cols = 10;    	
+                	try { ft_cols = Integer.parseInt(System.getProperty("freetext_field_columns")); }
+                	catch (java.lang.NullPointerException | java.lang.NumberFormatException ex) {}
+                	int ft_font_inc = 0;
+                	try { ft_font_inc = Integer.parseInt(System.getProperty("freetext_font_increase")); }
+                	catch (java.lang.NullPointerException | java.lang.NumberFormatException ex) {}
+                	                	
+                    freetextArea = new JTextArea(1,ft_cols);
+                    freetextArea.getDocument().addDocumentListener(this);
+                    freetextArea.setLineWrap(false);
+                    freetextArea.setWrapStyleWord(true);
+                    //if (MMAX2.getStandardFont() != null) { freetextArea.setFont(MMAX2.getStandardFont().deriveFont((float)fontSize)); }
+                    if (MMAX2.getStandardFont() != null) { freetextArea.setFont(MMAX2.getStandardFont().deriveFont((float)fontSize+ft_font_inc)); }                    
+
+                    scrollPane = new JScrollPane(freetextArea);
+                    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+                    scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+                    buttonBox.add(scrollPane);
+                    freetextArea.setVisible(true);
+                }// type = freetext
+                
+                else if (type == AttributeAPI.MARKABLE_POINTER)
+                {
+                    /* type = markable_pointer */
+                    if (idLabel == null)
+                    {
+                        idLabel = new JLabel(MMAX2.defaultRelationValue);
+                        if (MMAX2.getStandardFont() != null) { idLabel.setFont(MMAX2.getStandardFont().deriveFont((float)fontSize));}
+                        idLabel.setEnabled(false);
+                        buttonBox.add(idLabel);
+                    }
+                                        
+                    /* Get value of 'next' attribute */
+                    try { nextValue = currentNode.getAttributes().getNamedItem("next").getNodeValue(); }
+                    catch (java.lang.NullPointerException ex) { nextValue =""; }
+
+                    // There is a next value associated with the current possible value. So this attribute is branching.
+                    if (nextValue.equals("")==false) 
+                    {
+                    	isBranching = true;
+                    	if (currentScheme.isVerbose()) { System.err.println("      --> "+nextValue); }                    	
+                    }                                                            
+                    /* Store 'next' value of Button c at position c (this might be empty!) */
+                    nextAttributes.add(nextValue);
+                    
+                }
+                else if (type == AttributeAPI.MARKABLE_SET)
+                {
+                    /* type = markable_SET */
+                	/* TODO Make sets branching as well ... */
+                    idLabel = new JLabel(MMAX2.defaultRelationValue);
+                    if (MMAX2.getStandardFont() != null) { idLabel.setFont(MMAX2.getStandardFont().deriveFont((float)fontSize));}
+                    idLabel.setEnabled(false);
+                    buttonBox.add(idLabel);
+                }                              
+            }//ELEMENT_NODE
+        }// for z
+        
+        if (type == AttributeAPI.NOMINAL_BUTTON || type == AttributeAPI.NOMINAL_LIST)
+        {
+        	if (currentScheme.isDebug()) System.err.println("     Name mappings:            "+ lowerCasedValueStringsToValueStrings);
+        	if (currentScheme.isDebug()) System.err.println("     Index to String mappings: "+ valueIndicesToValueStrings);
+        	if (currentScheme.isDebug()) System.err.println("     String to Index mappings: "+ lowerCasedValueStringsToValueIndices);
+        }
+        
+        if (listSelector != null) listSelector.addActionListener(this);
+        if (isBranching) { attributeLabel.setText("< > "+attributeLabel.getText()); }        
+        innerBox.add(buttonBox);
+        this.add(innerBox); 
+    }
+        
+    public final String getNormalizedValueName(String name)
+    {
+    	if (type == AttributeAPI.NOMINAL_BUTTON || type == AttributeAPI.NOMINAL_LIST)
+    	{
+    		return this.lowerCasedValueStringsToValueStrings.get(name.toLowerCase());
+    	}
+    	else
+    		{ return name; }
+    }
+    
+    public final String getDisplayName()
+    {
+        return displayAttributeName;
+    }
+    
+    public final ArrayList<String> getOrderedValues()
+    {
+        return orderedValues;
+    }
+        
+    public final MMAX2Attribute[] getDirectlyDependentAttributes()
+    {
+        ArrayList<MMAX2Attribute> temp = new ArrayList<MMAX2Attribute>();
+        if (type == AttributeAPI.NOMINAL_BUTTON || type == AttributeAPI.NOMINAL_LIST || type==AttributeAPI.MARKABLE_POINTER)
+        {
+            // Iterate over all possible values defined for this attribute
+            for (int z=0;z<nextAttributes.size();z++)
+            {
+                String nextVal = (String) nextAttributes.get(z);
+                // next attribute *IDs* come as they are specified in the next attributes in the scheme file
+                if (nextVal.equals("")==false)
+                {
+                    /* Parse String into List of Ids */
+                    ArrayList tempresult = MarkableHelper.parseCompleteSpan(nextVal);
+                    /* Iterate over all IDs found */
+                    for (int p=0;p<tempresult.size();p++)
+                    {
+                    	// New 1.15: Lowercase ids found in next attribute before lookup 
+                        MMAX2Attribute currentAttrib = (MMAX2Attribute) annotationscheme.getAttributeByID(((String) tempresult.get(p)).toLowerCase() );                        
+                        if (currentAttrib != null)
+                        {                                                    
+                            /* Add each Attribute to result only once */                               
+                            if (temp.contains(currentAttrib)==false) { temp.add(currentAttrib); }
+                        }
+                        else { System.err.println("Dependent attribute "+(String) tempresult.get(p)+" not found!"); }
+                    }                    
+                }
+            }
+        }        
+        return (MMAX2Attribute[])temp.toArray(new MMAX2Attribute[0]);
+    }
+    
+    public final String getAttributeNameToShowInMarkablePointerFlag()
+    {
+        return toShowInFlag;
+    }
+    
+    public final void destroy()
+    {
+        markableRelation = null;
+        annotationscheme = null;       
+    }
+    
+    public final boolean inDomain(String domain)
+    {
+        boolean result = false;
+        if (targetDomain.equals("")) 
+        {
+            result = true;
+        }
+        else
+        {
+            if (targetDomain.equals(domain) ||
+                targetDomain.startsWith(domain+",") ||
+                targetDomain.endsWith(","+domain) ||
+                targetDomain.indexOf(","+domain+",")!=-1)
+            {
+                result=true;
+            }
+        }
+        return result;
+    }
+    
+    public final UIMATypeMapping getUIMATypeMapping()
+    {
+    	return uimaTypeMapping;
+    }
+    
+    public final String getAddToMarkablesetInstruction()
+    {
+        return this.add_to_markableset_instruction;
+    }
+    
+    public final String getRemoveFromMarkablesetInstruction()
+    {
+        return this.remove_from_markableset_instruction;
+    }
+
+    public final String getAdoptIntoMarkablesetInstruction()
+    {
+        return this.adopt_into_markableset_instruction;
+    }
+
+    public final String getMergeIntoMarkablesetInstruction()
+    {
