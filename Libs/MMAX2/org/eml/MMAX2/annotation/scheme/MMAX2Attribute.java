@@ -225,3 +225,195 @@ public class MMAX2Attribute extends JPanel implements java.awt.event.ActionListe
 
         // TODO Vary this to optimize layout
         labelBox.add(Box.createHorizontalStrut(120));
+                        
+        labelBox.add(labelPanel);//
+        innerBox.add(labelBox);
+        
+        Node currentNode = null;
+        String nextValue = "";
+
+        String currentValue = "";
+        String tempText = "";
+
+        JRadioButton currentButton = null;
+        invisibleButton = new JRadioButton();
+        group = new ButtonGroup();
+        group.add(invisibleButton);                    
+        buttons = new ArrayList<JRadioButton>();
+
+        // TODO Can these be merged into one list, using index and direct lookup ?
+        valueIndicesToValueStrings = new ArrayList<String>();
+        lowerCasedValueStringsToValueIndices = new Hashtable<String, Integer>();                        
+
+        // New in 1.15
+        lowerCasedValueStringsToValueStrings = new Hashtable<String, String>();        
+        
+        /* Iterate over allChildren (i.e. <value> elements from <attribute> XML element) */
+        for (int z=0;z<allChildren.getLength();z++)
+        {                        
+            /* Get current child node */
+            currentNode = allChildren.item(z);           
+                        
+            /* Only if current child is of type ELEMENT */
+            if (currentNode.getNodeType() == Node.ELEMENT_NODE)
+            {          
+            	
+// begin tool tip stuff            	
+            	// text is used as content of the annotation hint window 
+                /* Try to extract value of 'text' attribute from <value> element */
+                try { tempText = currentNode.getAttributes().getNamedItem("text").getNodeValue(); }
+                catch (java.lang.NullPointerException ex) { tempText=""; }               
+
+                // Get HTML file with anno hint content
+                String descFileName = "";
+                try { descFileName = currentNode.getAttributes().getNamedItem("description").getNodeValue();}
+                catch (java.lang.NullPointerException ex){ }
+                
+                // This will override any text supplied above!
+                // Get HTML content for anno hint
+                if (descFileName.equals("")==false)
+                {
+                    String schemeFileName = annotationscheme.getSchemeFileName();
+                    tempText = MMAX2AnnotationScheme.readHTMLFromFile(schemeFileName.substring(0,schemeFileName.lastIndexOf(File.separator)+1)+descFileName);
+                }
+                                
+                if (tempText.equals(""))
+                {
+                    // No text attribute, so try to extract (longer) text from <longtext> child
+                    NodeList valueChildren = currentNode.getChildNodes();                    
+                    if (valueChildren != null)
+                    {
+                        for (int q=0;q<valueChildren.getLength();q++)
+                        {
+                            Node valueChild = (Node) valueChildren.item(q);
+                            if (valueChild.getNodeName().equalsIgnoreCase("longtext"))
+                            {
+                                try { tempText = "<html>"+valueChild.getFirstChild().getNodeValue()+"</html>";}
+                                catch (java.lang.NumberFormatException ex) { tempText=""; }
+                                break;
+                            }   
+                        }
+                    }
+                }
+                
+                if (tempText.equals(""))
+                {
+                    /* Try to extract value of 'id' attribute from <value> element, as a last resort to display in anno hint window */
+                    try { tempText = currentNode.getAttributes().getNamedItem("id").getNodeValue(); }
+                    catch (java.lang.NullPointerException ex) { }
+                }
+                                
+                if (tempText.equals("") == false)
+                {
+                    // New February 18, 2005: Replace { with < and } with >
+                    tempText = tempText.replaceAll("\\{","<");
+                    tempText = tempText.replaceAll("\\}",">");
+                }
+                                
+                /* Make final copy of current 'text' for use in ME */
+                final String currentText = tempText;                
+                /* Get 'name' of this <value> element */
+                try { currentValue = currentNode.getAttributes().getNamedItem("name").getNodeValue();}
+                catch (java.lang.NullPointerException ex) { System.out.println("Error: No 'name' attribute for <value> "+currentNode); }                
+                
+                // TODO Fix tooltip vs anno hint
+// end tool tip stuff
+                                                               
+                // Start handling actual attribute and values
+                // These two have a lot in common
+                if (type == AttributeAPI.NOMINAL_BUTTON || type == AttributeAPI.NOMINAL_LIST)
+                {
+                    // NEW 1.15 : Add val name to list of ordered values (for oneclickanno) for this attribute
+                    orderedValues.add(currentValue);
+
+                    // Create mapping from lower-cased to correctly cased value string
+                    // This is used for retrieving, for a given value string, the correct value spelling
+                    lowerCasedValueStringsToValueStrings.put(currentValue.toLowerCase(), currentValue); 
+
+                    // Create mapping from val index to name of value at this index
+                    valueIndicesToValueStrings.add(currentValue);
+                    // TODO Replace size with e.g. len(ordered values)
+                    //lowerCasedValueStringsToValueIndices.put(currentValue.toLowerCase(), size);
+                    // This should map the first value to index 0
+                    lowerCasedValueStringsToValueIndices.put(currentValue.toLowerCase(), lowerCasedValueStringsToValueIndices.size());
+                    
+                    /* Get value of 'next' attribute */
+                    try { nextValue = currentNode.getAttributes().getNamedItem("next").getNodeValue(); }
+                    catch (java.lang.NullPointerException ex) { nextValue =""; }
+
+                    // There is a next value associated with the current possible value. So this attribute is branching.
+                    if (nextValue.equals("")==false) 
+                    {
+                    	isBranching = true;
+                    	if (currentScheme.isVerbose()) { System.err.println("     "+currentValue +" --> "+nextValue); }
+                    }
+                    else
+                    {
+                    	if (currentScheme.isVerbose()) { System.err.println("     "+currentValue);}
+                    }
+                    /* Store 'next' value of Button c at position c (this might be empty!) */
+                    nextAttributes.add(nextValue);
+//                    size++;
+                }
+                	
+                if (type == AttributeAPI.NOMINAL_BUTTON)
+                {                    
+                    /* Create one JRadioButton for each value, using correct spelling */
+                    currentButton = null;
+                    currentButton = new JRadioButton(currentValue);
+                    if (MMAX2.getStandardFont() != null) { currentButton.setFont(MMAX2.getStandardFont().deriveFont((float)fontSize));}
+                    currentButton.addActionListener(this);
+                    
+                    /* Tell button which number it is (-1 because it was added to the list already) */
+                    currentButton.setActionCommand(lowerCasedValueStringsToValueIndices.size()-1+"");
+                    /* Store Button itself */
+                    buttons.add(currentButton);
+                    //                    
+                    // Handle anno hint stuff
+                    final String currentAtt=displayAttributeName+":"+currentValue;                   
+                    /* Set anno hint text */
+                    if (currentText.equals(noneAvailableForValue)==false)
+                    {
+                    	// New 1.15
+                    	currentButton.setToolTipText(currentText);                    	
+                        currentButton.addMouseListener( 
+                        new java.awt.event.MouseAdapter()
+                        {
+                            public void mouseEntered(java.awt.event.MouseEvent me) { schemeCopy.showAnnotationHint(currentText,false,currentAtt); }
+                            public void mouseExited(java.awt.event.MouseEvent me) { schemeCopy.hideAnnotationHint(); }                            
+                            public void mouseClicked(java.awt.event.MouseEvent me)
+                            {
+                                if (me.getButton()==java.awt.event.MouseEvent.BUTTON3)
+                                {
+                                    schemeCopy.showAnnotationHint(currentText,true,currentAtt);
+                                    return;
+                                }
+                            }
+                        }
+                        );
+                    }
+
+                    /* Add button to ButtonGroup, so selection is mutually exclusive */
+                    group.add(currentButton);
+                    /* Add button to display, so button is visible */                    
+                    buttonBox.add(currentButton);
+                }//type = button
+  
+                else if (type == AttributeAPI.NOMINAL_LIST)
+                {                                        
+                    /* Init listSelector */
+                    if (listSelector == null) 
+                    {
+                        listSelector = new JComboBox<String>();
+                        if (MMAX2.getStandardFont() != null) { listSelector.setFont(MMAX2.getStandardFont().deriveFont((float)fontSize)); }
+                    }
+                                                            
+                    listSelector.addItem(currentValue);
+                    /* Add JComboBox to display only once */
+                    if (listSelector.getItemCount()==1) { buttonBox.add(listSelector); }
+                }//type = button
+                                
+                else if (this.type == AttributeAPI.FREETEXT)
+                {
+                	/* type = freetext */
+                	int ft_cols = 10;    	
