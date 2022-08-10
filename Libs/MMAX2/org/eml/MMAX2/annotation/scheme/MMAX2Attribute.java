@@ -592,3 +592,197 @@ public class MMAX2Attribute extends JPanel implements java.awt.event.ActionListe
 
     public final String getMergeIntoMarkablesetInstruction()
     {
+        return this.merge_into_markableset_instruction;
+    }
+
+    public final String getPointToMarkableInstruction()
+    {
+        return this.point_to_markable_instruction;
+    }
+    
+    public final String getRemovePointerToMarkableInstruction()
+    {
+        return this.remove_pointer_to_markable_instruction;
+    }
+
+    public final void setMarkableRelation(MarkableRelation mrelation)
+    {
+        markableRelation = mrelation;
+    }
+    
+    public final MarkableRelation getMarkableRelation()
+    {
+        return markableRelation;
+    }
+    
+    /** This method returns the correctly cased default value for this attribute */
+    // New 1.15: Values for NOMINAL_* are not lower-cased any more
+    public String getDefaultValue()
+    {
+        String result = "";
+        if (type == AttributeAPI.NOMINAL_BUTTON)
+        {
+            result = (String) valueIndicesToValueStrings.get(0);
+        }
+        else if (type == AttributeAPI.NOMINAL_LIST)
+        {
+            result = (String) listSelector.getItemAt(0);
+        }        
+        else if (type == AttributeAPI.FREETEXT)
+        {
+            result = "";
+        }
+        else if (type == AttributeAPI.MARKABLE_SET || type == AttributeAPI.MARKABLE_POINTER)
+        {
+            result = MMAX2.defaultRelationValue;
+        }
+        return result;
+    }
+    
+    public final boolean getIsDashed()
+    {
+        return dashed;
+    }
+    
+    public final int getLineWidth()
+    {
+        return lineWidth;
+    }
+    
+    public final Color getLineColor()
+    {
+        return lineColor;
+    }
+
+    public final int getLineStyle()
+    {
+        return lineStyle;
+    }
+    
+    public final int getMaxSize()
+    {
+        return maxSize;
+    }
+
+        
+    /** This handler is called upon the selection of a button or a box menu item on this Attribute. */
+    public void actionPerformed(java.awt.event.ActionEvent p1) 
+    {
+//    	System.err.println(p1);
+        /* Do nothing if the action was initiated automatically */
+        if (annotationscheme.ignoreClick)  { return; }
+                        
+        if (type == AttributeAPI.NOMINAL_BUTTON)        
+        {            
+            // The attribute is rendered as a list of RadioButtons, so get index of clicked button, communicated through actionCommand
+        	// index should be 0-based
+            int position = Integer.parseInt(p1.getActionCommand());
+            System.err.println(position);
+            System.err.println(currentIndex);
+            // Ignore if current value is clicked again
+            if (position == currentIndex) { return; }            
+            currentIndex = position;
+            // A selection always resets any freezing 
+            setIsFrozen(false,"");
+            /* Call valueChanged with this MMAX2Attribute object as callingLevel */
+            annotationscheme.valueChanged(this,this,null,position,new ArrayList());
+        }
+        else if (type == AttributeAPI.NOMINAL_LIST)
+        {
+            // The attribute is rendered as a drop down list, so get index of selected item
+            int position = listSelector.getSelectedIndex();
+            // Ignore if current value is chosen again
+            if (position == currentIndex) { return; }
+            currentIndex = position;            
+            // A selection always resets any freezing
+            setIsFrozen(false,"");
+            /* Call valueChanged with this MMAX2Attribute object as callingLevel */
+            annotationscheme.valueChanged(this,this,null,position,new ArrayList());
+        }
+    }
+    
+    /** This method returns an array of the MMAX2Attributes that *the current value* of this points to as 'next', or empty Array. */
+    public MMAX2Attribute[] getNextAttributes(boolean toDefault)
+    {
+        MMAX2Attribute[] result = new MMAX2Attribute[0];
+        // A frozen level does not point to any valid next levels
+        if (frozen) return result;
+        
+        ArrayList<String> tempresult; // = new ArrayList();      
+        int selIndex = -1;
+        if (getType() == AttributeAPI.NOMINAL_BUTTON || getType() == AttributeAPI.NOMINAL_LIST)
+        {
+            /* Get Index of selected JRadioButton or List */
+            selIndex = getSelectedIndex();                     
+        }
+        else if (getType() == AttributeAPI.MARKABLE_POINTER)
+        {
+            String currentValue = getSelectedValue();
+            if (currentValue.equalsIgnoreCase(MMAX2.defaultRelationValue))  { selIndex = 0; }
+            else 															{ selIndex = 1; }
+        }
+        else if (getType() == AttributeAPI.MARKABLE_SET || getType()== AttributeAPI.FREETEXT)
+        {
+            return result;
+        }
+//        else
+//        {
+//            System.out.println("Error: Unknown attribute type! "+getDisplayAttributeName());
+//            return result;            
+//        }
+            
+        /* Get String of next attributes this points to (might be empty) */
+        String nextString = (String) nextAttributes.get(selIndex);
+        if (nextString.equals("")==false)
+        {
+            /* Parse String into List of Ids */
+            tempresult = MarkableHelper.parseCompleteSpan(nextString);
+            result = new MMAX2Attribute[tempresult.size()];
+            /* Iterate over all IDs found */
+            for (int p=0;p<tempresult.size();p++)
+            {
+                /* Add each Attribute to result, using the lower-cased id as key */                               
+                result[p] = (MMAX2Attribute) annotationscheme.getAttributeByID(((String) tempresult.get(p)).toLowerCase());
+                /* Reset to default */
+                if (result[p] != null)
+                {
+                    if (toDefault) { ((MMAX2Attribute)result[p]).toDefault(); }
+                }
+                else { System.err.println("No Attribute with ID "+(String)tempresult.get(p)+"!"); }
+            }
+        }        
+        return result;
+    }
+   
+    
+    /* This method returns the index of the currently selected JRadioButton / JListItem, or -1. It is used
+       for determining the index of the current value, for retrieving the corresp. 'next' levels. */
+    public int getSelectedIndex()
+    {
+        int index=-1;
+        if (type == AttributeAPI.NOMINAL_BUTTON)
+        {
+            JRadioButton currentButton=null;
+            
+            //for (int p=0;p<this.size;p++)
+            for (int p=0;p<this.lowerCasedValueStringsToValueIndices.size();p++)
+            {
+                currentButton = (JRadioButton) buttons.get(p);
+                if (currentButton.isSelected())
+                {
+                    index=p;
+                    break;
+                }
+            }
+        }
+        else if (type == AttributeAPI.NOMINAL_LIST)
+        {
+            index = this.listSelector.getSelectedIndex();
+        }
+        else
+        {
+            System.err.println("getSelectedIndex not applicable for attribute "+this.attributeLabel.getText());
+        }
+        return index;
+    }
+    
