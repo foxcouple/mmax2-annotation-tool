@@ -996,3 +996,204 @@ public class MMAX2Attribute extends JPanel implements java.awt.event.ActionListe
             result = true;
         }
         else
+        {
+            MMAX2Attribute currentAttribute = null;
+            // Iterate over all attributes the current on depends on
+            for (int z=0;z<dependsOn.size();z++)
+            {
+                currentAttribute = (MMAX2Attribute)dependsOn.get(z);
+                if (currentAttribute.dependsOn(superiorAttribute))
+                {
+                    result = true;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+    
+      
+    public void setSelectedIndex(int num)
+    {
+        // This always uses ignore = true! 
+        if (type == AttributeAPI.NOMINAL_BUTTON)
+        {
+            annotationscheme.ignoreClick = true;
+            ((JRadioButton) buttons.get(num)).setSelected(true);
+            currentIndex = num;
+            annotationscheme.ignoreClick = false;
+        }
+        else if (type == AttributeAPI.NOMINAL_LIST)
+        {
+            annotationscheme.ignoreClick = true;
+            listSelector.setSelectedIndex(num);
+            currentIndex = num;
+            annotationscheme.ignoreClick = false;
+        }            
+    }
+    
+    public void setEnabled(boolean status)
+    {
+        /* No support for id type necessary */
+        if (this.type == AttributeAPI.NOMINAL_BUTTON)
+        {        	
+            //for (int o=0;o<this.size;o++)
+            for (int o=0;o<lowerCasedValueStringsToValueIndices.size();o++)
+            {
+                ((JRadioButton) buttons.get(o)).setEnabled(status);
+                if (this.readOnly) ((JRadioButton) buttons.get(o)).setEnabled(false);
+            }
+        }
+        else if (this.type == AttributeAPI.NOMINAL_LIST)
+        {
+            listSelector.setEnabled(status);
+        }
+        else if (this.type == AttributeAPI.FREETEXT)
+        {
+            this.freetextArea.setEnabled(status);
+            this.freetextArea.setEditable(status);
+        }        
+    }
+    
+    /** This method resets this Schemelevel to default */
+    public void toDefault()
+    {  
+        if (type == AttributeAPI.NOMINAL_BUTTON)
+        {
+            annotationscheme.ignoreClick = true;
+            ((JRadioButton) buttons.get(0)).setSelected(true);
+            annotationscheme.ignoreClick = false;
+            // NEW February 17, 2005: 
+            // Make sure currentIndex is updated at setDefault
+            currentIndex = 0;            
+        } 
+        if (type == AttributeAPI.NOMINAL_LIST)
+        {
+            annotationscheme.ignoreClick = true;
+            listSelector.setSelectedIndex(0);
+            annotationscheme.ignoreClick = false;
+            // NEW February 17, 2005: 
+            // Make sure currentIndex is updated at setDefault
+            currentIndex = 0;
+        }                
+        else if (type == AttributeAPI.FREETEXT)
+        {
+            annotationscheme.ignoreClick = true;                
+            freetextArea.setText("");
+            annotationscheme.ignoreClick = false;
+        }
+        else if (type == AttributeAPI.MARKABLE_SET || type == AttributeAPI.MARKABLE_POINTER)
+        {
+            idLabel.setText(MMAX2.defaultRelationValue);
+        }
+    }
+               
+    public void removeUpdate(javax.swing.event.DocumentEvent p1) 
+    {
+        if  (annotationscheme.ignoreClick) return;        
+        if (annotationscheme.getCurrentAttributePanel().hasUncommittedChanges==false) annotationscheme.getCurrentAttributePanel().setHasUncommittedChanges(true);
+        annotationscheme.getCurrentAttributePanel().setApplyEnabled(true);
+        annotationscheme.getCurrentAttributePanel().setUndoEnabled(true);        
+    }
+    
+    public void changedUpdate(javax.swing.event.DocumentEvent p1) 
+    {
+        if (annotationscheme.ignoreClick) return;        
+        if (annotationscheme.getCurrentAttributePanel().hasUncommittedChanges==false) annotationscheme.getCurrentAttributePanel().setHasUncommittedChanges(true);
+        annotationscheme.getCurrentAttributePanel().setApplyEnabled(true);
+        annotationscheme.getCurrentAttributePanel().setUndoEnabled(true);        
+    }
+    
+    public void insertUpdate(javax.swing.event.DocumentEvent p1) 
+    {
+        if (annotationscheme.ignoreClick) return;               
+        if (annotationscheme.getCurrentAttributePanel().hasUncommittedChanges==false) annotationscheme.getCurrentAttributePanel().setHasUncommittedChanges(true);
+        annotationscheme.getCurrentAttributePanel().setApplyEnabled(true);
+        annotationscheme.getCurrentAttributePanel().setUndoEnabled(true);
+    }
+    public int getType()
+    {
+        return type;
+    }
+
+    public final String decodeAttributeType()
+    {
+        String result = "unknown type !";
+        if (type == AttributeAPI.NOMINAL_BUTTON || type == AttributeAPI.NOMINAL_LIST)
+        {
+            result = "(NOMINAL";
+        }
+        else if (type == AttributeAPI.MARKABLE_SET)
+        {
+            result = "(MARKABLE_SET";
+        }
+        else if (type == AttributeAPI.MARKABLE_POINTER)
+        {
+            result = "(MARKABLE_POINTER";
+        }
+        else if (type == AttributeAPI.FREETEXT)
+        {
+            result = "(FREETEXT";
+        }
+        
+        if (this.isBranching)
+        {
+            result = result +", branching)";
+        }
+        else
+        {
+            result = result + ")";
+        }
+        return result;
+    }
+    
+    public boolean isDefined(String value)
+    {
+        /* Constraints exist for nominal attributes only !! */    	
+        if (type == AttributeAPI.NOMINAL_BUTTON || type == AttributeAPI.NOMINAL_LIST)
+        {
+            //return buttonIndicesToValueStrings.contains(value);
+        	// New 1.15
+        	return lowerCasedValueStringsToValueStrings.containsKey(value.toLowerCase());
+        }
+        // MODIFIED March 22, 2005: This used to default to true
+        else if (type == AttributeAPI.FREETEXT)
+        {
+            // Any value is defined for a freetext attribute
+            return true;
+        }
+        else if (type == AttributeAPI.MARKABLE_SET)
+        {
+            if (value.equalsIgnoreCase("empty")==true) 			{ return true; }
+            else if (value.equalsIgnoreCase("initial")==true)	{ return true; }
+            else if (value.equalsIgnoreCase("final")==true) 	{ return true; }            
+            else 												{ return false; }            
+        }
+        else if (type == AttributeAPI.MARKABLE_POINTER)
+        {
+            if (value.equalsIgnoreCase("empty")==true) 			{ return true; }
+            else if (value.equalsIgnoreCase("target")==true) 	{ return true; }
+            else 												{ return false; }
+        }
+        else { return false; }
+    }
+    
+    public final String getID()
+    {
+        return ID;
+    }
+    
+    public final boolean getIsBranching()
+    {
+        return this.isBranching;
+    }
+
+    public final boolean getIsFrozen()
+    {
+        return this.frozen;
+    }
+
+    public final boolean getIsReadOnly()
+    {
+        return this.readOnly;
+    }
