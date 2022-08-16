@@ -184,3 +184,214 @@ public class MMAX2Discourse implements DiscourseAPI
     }
     
     public final void setNameSpace(String _nameSpace)
+    {
+        nameSpace = _nameSpace;
+    }
+        
+    public final String getNameSpace()
+    {
+        return nameSpace;
+    }
+    
+    public final void setWordFileName (String name)
+    {
+        wordFileName = name;
+    }
+    public final String getWordFileName()
+    {
+        return wordFileName;
+    }        
+    
+    public final void addWithID(String id, Element node)
+    {
+        wordDOM.putIdentifier(id, node);
+    }
+        
+    public final void destroyDependentComponents()
+    {
+        discoursePositionOfDiscourseElement.clear();
+        discoursePositionOfDiscourseElement = null;
+        discoursePositionOfDiscourseElement = new HashMap<String, Integer>();
+        chart = null;
+        temporaryDisplayStartPosition = null;
+        temporaryDisplayEndPosition = null;
+        temporaryDiscourseElementAtPosition = null;
+        markableDisplayAssociation.clear();        
+        markableDisplayAssociation = null;
+
+        hotSpotDisplayAssociation.clear();        
+        hotSpotDisplayAssociation = null;
+        
+        STARTCOMP =  null;
+        ENDCOMP = null;
+        DISCOURSEORDERCOMP = null;
+        LEVELCOMP = null;        
+        wordDOM = null;
+        hash = null;
+
+    }
+    
+    public final boolean getHasGUI()
+    {
+        return hasGUI;
+    }
+    
+//    protected void finalize()
+//    {
+////        System.err.println("MMAX2Discourse is being finalized!");        
+//        try
+//        {
+//            super.finalize();
+//        }
+//        catch (java.lang.Throwable ex)
+//        {
+//            ex.printStackTrace();
+//        }        
+//    }
+    
+        
+    public final MMAX2Document getDisplayDocument()
+    {
+        return mmax2.getCurrentDocument();
+    }
+   
+    public final void setMMAX2(MMAX2 _mmax2)
+    {
+        mmax2 = _mmax2;             
+    }
+    
+    public final MMAX2 getMMAX2()
+    {
+        return mmax2;
+    }
+    
+    public final Integer[] getAllDisplayAssociations()
+    {
+        if (markableDisplayAssociation.size()!=0)
+        {
+            return (Integer[]) (((Set)markableDisplayAssociation.keySet()).toArray(new Integer[1]));
+        }
+        else
+        {
+            return null;
+        }
+    }
+    
+    
+    public final Markable getMarkableAtDisplayAssociation(int displayPosition)
+    {
+        // No active/inactive distinction necessary, because only active Markables will have MarkableHandles anyway
+        // WRONG: Handles of deactivated layers will stay around until next re-application !!
+        Markable result = (Markable) markableDisplayAssociation.get(displayPosition);
+        return result;
+    }
+     
+    public final String getHotSpotAtDisplayAssociation(int displayPosition)
+    {
+        String result = (String) hotSpotDisplayAssociation.get(displayPosition);
+        return result;        
+    }
+    
+    public final Integer[] removeDisplayAssociationsForMarkable(Markable removee)
+    {
+        Set all = markableDisplayAssociation.entrySet();
+        Iterator it = all.iterator();
+        ArrayList<Integer> positions = new ArrayList<Integer>();
+        Integer currentPos = null;
+        boolean added = false;
+        while (it.hasNext())
+        {
+            Entry<?, ?> current = (Entry<?, ?>) it.next();
+            if (current.getValue().equals(removee))
+            {
+                it.remove();
+                // Get current position
+                currentPos = (Integer) current.getKey();
+                if (positions.size()==0)
+                {
+                    // The list is still empty, so simply add 
+                    positions.add(currentPos);
+                }
+                else
+                {
+                    // Find insertion point
+                    for (int p=0;p<positions.size();p++)
+                    {
+                        if ((((Integer)positions.get(p)).intValue())>currentPos.intValue())
+                        {
+                            positions.add(p,currentPos);
+                            added=true;
+                            break;
+                        }
+                    }
+                }
+                if(!added) positions.add(currentPos);
+            }
+        }
+        return (Integer[]) positions.toArray(new Integer[0]);
+    }
+    
+    public final DocumentImpl getWordDOM()
+    {
+        return wordDOM;
+    }
+    
+    public final int getDisplayStartPositionFromDiscoursePosition(int discoursePosition)
+    {
+        int result = -1;
+        try
+        {
+            result = displayStartPosition[discoursePosition].intValue();
+        }        
+        catch (java.lang.ArrayIndexOutOfBoundsException ex)
+        {
+            ex.printStackTrace();
+        }
+        return result;
+    }
+    
+    public final int getDisplayEndPositionFromDiscoursePosition(int discoursePosition)
+    {        
+        int result = -1;
+        try
+        {
+            result = displayEndPosition[discoursePosition].intValue();
+        }  
+        catch (java.lang.ArrayIndexOutOfBoundsException ex)
+        {
+            ex.printStackTrace();
+        }        
+        return result;        
+    }
+        
+    public final int getDiscoursePositionAtDisplayPosition(int displayPosition)
+    {
+        int DiscPos = -1;
+        int startPos = 0;
+        int endPos = 0;
+//        Integer displayPosition = new Integer(_displayPosition);
+        // Try if pos is the exact beginning of a Discourse Element
+        startPos = Arrays.binarySearch(displayStartPosition,displayPosition);
+        if (startPos >= 0 && startPos < displayStartPosition.length)
+        {
+        	try
+        	{
+        		if (displayStartPosition[startPos].equals(displayPosition))
+        		{
+        			// The user clicked the first character
+        			return startPos;
+        		}
+        	}
+        	catch (java.lang.ArrayIndexOutOfBoundsException ex)
+        	{
+        		ex.printStackTrace();
+        	}
+        }
+                
+        // Try if pos is the exact end of a Discourse Element        
+        endPos = Arrays.binarySearch(displayEndPosition,displayPosition);
+        if (endPos >=0 && endPos < displayEndPosition.length)
+        {
+        	try
+        	{
+        		if (displayEndPosition[endPos].equals(displayPosition))
