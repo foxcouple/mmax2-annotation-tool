@@ -5,4 +5,12 @@ public class UIMATypeMapping
 	private String descriptorPath="";
 	private String className="";	
 	
-	public UIMA
+	public UIMATypeMapping (String _descriptorPath, String _className)
+	{
+		descriptorPath = _descriptorPath;
+		className = _className;
+	}
+	
+	public UIMATypeMapping (String _completePath)
+	{		
+		int hashPos = _comple
