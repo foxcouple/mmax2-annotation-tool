@@ -37,4 +37,6 @@ public class UIMATypeMapping
 	
 	public String toString()
 	{
-		return "UIMA desc
+		return "UIMA descriptor path: "+descriptorPath + "\nUIMA class name: "+className;
+	}
+}
