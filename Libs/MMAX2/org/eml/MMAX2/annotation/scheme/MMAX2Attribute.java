@@ -786,3 +786,213 @@ public class MMAX2Attribute extends JPanel implements java.awt.event.ActionListe
         return index;
     }
     
+    
+    /* This method returns the value string associated with the currently selected JRadioButton/list item, or empty string */
+    public String getSelectedValue()
+    {
+        if (frozen)  { return ""; }
+        
+        String value = "";
+        JRadioButton currentButton=null;
+
+        if (this.type == AttributeAPI.NOMINAL_BUTTON)
+        {
+        	
+            //for (int p=0;p<this.size;p++)
+        	for (int p=0;p<this.lowerCasedValueStringsToValueIndices.size();p++)
+            {
+                currentButton = (JRadioButton) buttons.get(p);
+                if (currentButton.isSelected())
+                {
+                	// Fixed for 1.15: This now returns the value string in the correct case
+                    value=((String) valueIndicesToValueStrings.get(p));
+                    break;
+                }
+            }
+        }
+        else if (this.type == AttributeAPI.NOMINAL_LIST)
+        {
+            value = (String) listSelector.getSelectedItem();
+        }        
+        else if (this.type == AttributeAPI.FREETEXT)
+        {
+            try 										{ value = freetextArea.getText(); }
+            catch (java.lang.NullPointerException ex) 	{ value = ""; }            
+            
+            value.trim();                        
+            
+//            /* Clean string for XML storage */
+//            String tempresult = "";
+//            String currentChar = "";
+//            for (int z=0;z<value.length();z++)
+//            {
+//                currentChar = value.substring(z,z+1);
+//                if (currentChar.equals("\"")) currentChar = "'";
+//                else if (currentChar.equals("ä")) currentChar = "ae";
+//                else if (currentChar.equals("ü")) currentChar = "ue";
+//                else if (currentChar.equals("ö")) currentChar = "oe" ;               
+//                else if (currentChar.equals("Ä")) currentChar = "AE";
+//                else if (currentChar.equals("Ü")) currentChar = "UE";
+//                else if (currentChar.equals("Ö")) currentChar = "OE" ;               
+//                else if (currentChar.equals("<")) currentChar = "";
+//                else if (currentChar.equals(">")) currentChar = "";
+//                else if (currentChar.equals("ß")) currentChar = "ss";
+//                else if (currentChar.equals("\n")) currentChar = " ";
+//                
+//                tempresult = tempresult + currentChar;                
+//            }
+//            value = tempresult.trim();      
+//            System.err.println(value);
+            
+        }
+        else if (type == AttributeAPI.MARKABLE_SET)
+        {
+            value = idLabel.getText();
+        }
+        else if (type == AttributeAPI.MARKABLE_POINTER) 
+        {
+            value = MMAX2Utils.expandTargetSpan(idLabel.getText());
+        }
+        return value;
+    }
+    
+    /** This method tries to select the JRadioButton associated with the value desiredValue. 
+        For attributes of type freetext or id, it sets the value to desiredValue.
+        It returns true if the value was found, false otherwise. For attributes of type id and freetext, 
+        result is always true, because no constraints can exist for these attributes.  FIXME
+        If desiredValue is a null String, index 0 is set. */ 
+    // NEW: if ignore = false, calling this will be equivalent to actually clicking the attribute
+    // (Used for oneclickAnnotation and set_values, which is the only case where ignore = false
+    public boolean setSelectedValue(String desiredValue, boolean ignore)
+    {        
+    	System.err.println(desiredValue);
+        boolean result = false;
+        int buttonPosition = 0;
+        int itemPosition = -1;
+        
+        if (type == AttributeAPI.NOMINAL_BUTTON)
+        {        
+            if (desiredValue == null || desiredValue.equals("") )
+            {
+                // Value is null or empty, so set to default with ignore = true
+            	// This can only happen programmatically 
+                setSelectedIndex(0);
+                result = true;               
+            }
+            else
+            {
+                /** DesiredValue is not "" and not _mmax default value_ either */
+                try
+                {
+                    /* Get index of JRadioButton to set, if any */
+                	// New 1.15
+                    //buttonPosition = ((Integer) lowerCasedValueStringsToButtonIndices.get(desiredValue)).intValue();
+                	// before lookup of value, normalize it to the spelling that is known by
+//                 	String normVal = lowerCasedValueStringsToValueStrings.get(desiredValue.toLowerCase());
+                    //buttonPosition = ((Integer) lowerCasedValueStringsToValueIndices.get(lowerCasedValueStringsToValueStrings.get(desiredValue.toLowerCase()))).intValue();
+                    buttonPosition = lowerCasedValueStringsToValueIndices.get(desiredValue.toLowerCase());
+                }
+                catch (java.lang.NullPointerException ex)
+                {
+                    /* No button available, so nothing to set */
+                    // This means that the desired value is not defined for this attribute 
+                    buttonPosition = -1;
+                    result = false;
+                }
+                
+                /* Only if a button was found */
+                if (buttonPosition != -1)
+                {
+                    if (ignore) 	{ setSelectedIndex(buttonPosition); }
+                    else 			{ ((JRadioButton) buttons.get(buttonPosition)).doClick(); }
+                    result = true;
+                }
+                else { System.err.println("Error: Value "+desiredValue+" not found on attribute "+displayAttributeName+"!"); }
+            }// else
+        }
+        else if (type == AttributeAPI.NOMINAL_LIST)
+        {        
+            if (desiredValue == null || desiredValue.equals(""))
+            {
+                listSelector.setSelectedIndex(0);
+                result = true;
+            }
+            else
+            {
+                /** DesiredValue is not "" and not _mmax default value_ either */                                                              
+                try
+                {
+                    /* Get index of JRadioButton to set, if any */
+                    for (int z=0;z<listSelector.getItemCount();z++)
+                    {   
+                        // New 1.15. Now we can even use equals() because the casing MUST be identical
+                        if (lowerCasedValueStringsToValueStrings.get(desiredValue.toLowerCase()).equals((String)listSelector.getItemAt(z)))
+                        {
+                            itemPosition = z;
+                            break;
+                        }
+                    }
+                }
+                catch (java.lang.NullPointerException ex)
+                {
+                    /* No button available, so nothing to set */
+                    // This means that the desired value is not defined for this attribute 
+                    itemPosition = -1;
+                    result = false;
+                }
+                
+                /* Only if a button was found */
+                if (itemPosition != -1)
+                {
+                    if (ignore) { annotationscheme.ignoreClick = true;}
+                    listSelector.setSelectedIndex(itemPosition);
+                    annotationscheme.ignoreClick = false;
+                    currentIndex = itemPosition;
+                    result = true;
+                }
+                else { System.err.println("Error: Value "+desiredValue+" not found on attribute "+this.displayAttributeName+"!"); }
+            }// else
+        }
+        
+        else if (type == AttributeAPI.FREETEXT)
+        {
+//        	System.err.println(desiredValue);        	
+            if (desiredValue != null) { freetextArea.setText(desiredValue); }
+            else { freetextArea.setText(""); }
+            annotationscheme.ignoreClick = false;
+            result = true;
+        }
+        else if (type == AttributeAPI.MARKABLE_SET)
+        {
+            if (desiredValue != null && desiredValue.equals("")==false && desiredValue.equals(MMAX2.defaultRelationValue)==false) { idLabel.setText(desiredValue); }
+            else 																												  { idLabel.setText(MMAX2.defaultRelationValue); }
+            result = true;
+        }
+        else if (type == AttributeAPI.MARKABLE_POINTER)
+        {
+            if (desiredValue != null && desiredValue.equals("")==false && desiredValue.equals(MMAX2.defaultRelationValue)==false) { idLabel.setText(MMAX2Utils.condenseTargetSpan(desiredValue)); }
+            else 																											      { idLabel.setText(MMAX2.defaultRelationValue); }
+            result = true;
+        }
+                return result;            
+    }
+    
+    public final void addDependsOn(MMAX2Attribute attrib)
+    {
+        dependsOn.add(attrib);
+    }
+    
+    public final boolean isIndependent()
+    {
+        return (dependsOn.size()==0);
+    }
+    
+    public final boolean dependsOn(MMAX2Attribute superiorAttribute)
+    {
+        boolean result = false;
+        if (dependsOn.contains(superiorAttribute))
+        {
+            // This depends on superiorAttribute if it directly depends on it
+            result = true;
+        }
+        else
