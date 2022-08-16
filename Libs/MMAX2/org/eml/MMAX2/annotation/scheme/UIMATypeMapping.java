@@ -13,4 +13,12 @@ public class UIMATypeMapping
 	
 	public UIMATypeMapping (String _completePath)
 	{		
-		int hashPos = _comple
+		int hashPos = _completePath.indexOf("#");
+		if (hashPos != -1)
+		{
+			descriptorPath = _completePath.substring(0,hashPos);
+			className = _completePath.substring(hashPos+1);
+		}
+		else
+		{
+			descriptorPath = _compl
