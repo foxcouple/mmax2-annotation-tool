@@ -1197,3 +1197,34 @@ public class MMAX2Attribute extends JPanel implements java.awt.event.ActionListe
     {
         return this.readOnly;
     }
+        
+    public void setIsFrozen(boolean status, String illegalValue)
+    {
+        if (status == true)
+        {
+            if (type == AttributeAPI.NOMINAL_BUTTON)
+            {
+                String warning = "Illegal attribute value: '"+illegalValue+"'";
+                invisibleButton.setSelected(true);
+                attributeLabel.setForeground(Color.red);
+                attributeLabel.setToolTipText(warning);
+                frozen = true;
+            }
+            else if (type == AttributeAPI.NOMINAL_LIST)
+            {
+                String warning = "Illegal attribute value: '"+illegalValue+"'";
+                attributeLabel.setForeground(Color.red);
+                attributeLabel.setToolTipText(warning);
+                frozen = true;
+            }
+
+        }
+        else if (frozen == true)
+        {
+            attributeLabel.setForeground(Color.darkGray);
+            attributeLabel.setToolTipText(tooltiptext);
+            toDefault(); // Set to default
+            frozen = false;
+        }                
+    }        
+}
