@@ -77,3 +77,32 @@ public class DiscourseElementFileLoader
             ex.printStackTrace();            
             return 0;
         }
+                                
+        try
+        {
+        	parser.parse(new InputSource(new File(fileName).toURI().toString()));
+        }
+        catch (org.xml.sax.SAXParseException exception)
+        {
+            String error = "Line: "+exception.getLineNumber()+" Column: "+exception.getColumnNumber()+"\n"+exception.toString();            
+            JOptionPane.showMessageDialog(null,error,"DiscourseElementFileLoader: "+fileName,JOptionPane.ERROR_MESSAGE);
+            System.exit(0);
+        }                
+        catch (org.xml.sax.SAXException | java.io.IOException exception)
+        {
+            String error = exception.toString();
+            JOptionPane.showMessageDialog(null,error,"DiscourseElementFileLoader: "+fileName,JOptionPane.ERROR_MESSAGE);
+            System.exit(0);
+        }
+
+        deDOM = (DocumentImpl) parser.getDocument();
+        int c=deDOM.getElementsByTagName("word").getLength();        
+        return c;
+    }
+    
+    /** Get the entire DOM representation of the currently loaded discourse elements file. */
+    final public DocumentImpl getDOM()
+    {
+        return deDOM;
+    }        
+}
