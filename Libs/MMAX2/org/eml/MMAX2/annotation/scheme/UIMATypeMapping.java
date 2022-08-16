@@ -21,4 +21,20 @@ public class UIMATypeMapping
 		}
 		else
 		{
-			descriptorPath = _compl
+			descriptorPath = _completePath;
+		}
+	}
+		
+	public String getDescriptorPath()
+	{
+		return descriptorPath; 
+	}
+
+	public String getClassName()
+	{
+		return className;
+	}
+	
+	public String toString()
+	{
+		return "UIMA desc
