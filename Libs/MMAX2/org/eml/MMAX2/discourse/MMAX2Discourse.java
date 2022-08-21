@@ -395,3 +395,204 @@ public class MMAX2Discourse implements DiscourseAPI
         	try
         	{
         		if (displayEndPosition[endPos].equals(displayPosition))
+        		{
+        			// The user clicked the first character
+        			return endPos;
+        		}
+        	}
+        	catch (java.lang.ArrayIndexOutOfBoundsException ex)
+        	{
+        		ex.printStackTrace();
+        	}
+        }
+        // When we are here, the click occurred either in the middle of a Discourse Element, 
+        // or in empty space
+        if (startPos == endPos)
+        {
+            // The click occurred in empty space
+            return DiscPos;
+        }
+        else
+        {
+            return (endPos * (-1))-1;
+        }            
+    }
+    
+    public final MMAX2DiscourseElement getDiscourseElementByID(String id)
+    {
+        MMAX2DiscourseElement result = null;
+        Node temp = getDiscourseElementNode(id);
+        if (temp != null)
+        {
+            result = new MMAX2DiscourseElement(temp.getFirstChild().getNodeValue(), temp.getAttributes().getNamedItem("id").getNodeValue(),this.getDiscoursePositionFromDiscourseElementID(temp.getAttributes().getNamedItem("id").getNodeValue()),MMAX2Utils.convertNodeMapToHashMap(temp.getAttributes(),null));        
+        }
+        return result;
+        
+    }
+    
+    
+    /** This method receives the String id of a DiscourseElement (word_x) and returns the (0-based)
+        discourse position, i.e. the running number of DiscourseElements that are registered in the current
+        display. The discourse position is determined using the Hash DiscoursePositionOfDiscourseElement
+        which has been filled by calls to this.registerDiscourseElement(String id) during style sheet
+        execution. (DiscoursePositionOfDiscourseElement won't be filled until after stylesheet execution!!) 
+        This will be filled incrementally during style sheet execution, and is thus available during that. */
+    public final int getDiscoursePositionFromDiscourseElementID(String id)
+    {               
+        int result = -1;
+        try
+        {
+            return ((Integer)discoursePositionOfDiscourseElement.get(id)).intValue();
+        }
+        catch (java.lang.NullPointerException ex)
+        {
+            System.err.println("No disc pos for "+id);
+            // This should not happen any more, since now even supressed des have a discourse position
+            ex.printStackTrace();
+        }
+        return result;
+    }
+    
+    public final String getDiscourseElementIDAtDiscoursePosition(int pos)
+    {
+        String result = "";
+        if (pos != -1)
+        {
+            try
+            {
+                result = discourseElementAtPosition[pos];
+            }
+            catch (java.lang.ArrayIndexOutOfBoundsException ex)
+            {
+                //ex.printStackTrace( );
+            }
+        }
+        return result;
+    }
+            
+     public final void registerAllDiscourseElements()
+     {
+         NodeList allWords = wordDOM.getElementsByTagName("word");
+         for (int z=0;z<allWords.getLength();z++)
+         {
+             registerDiscourseElement(allWords.item(z).getAttributes().getNamedItem("id").getNodeValue());
+         }
+     }
+     
+    /** This method receives a DiscourseElement id (word_x), assigns it a discourse position (0-based) and
+        stores both values in the Hash DiscoursePositionOfDiscourseElement. This Hash is later used by 
+        this.getDiscoursePositionFromDiscourseElementID(String id). This method also adds word_x to the 
+        list this.temporaryDiscourseElementAtPosition. This list's size is used as the discourse position
+        determiner for the _NEXT_ element to be added. This method must be called for every de, incl. 
+        those that are suppressed from the display! <b>Internal use only!</b>*/
+     public final void registerDiscourseElement(String id)
+     {    	          
+         if (discoursePositionOfDiscourseElement == null)
+         {
+             discoursePositionOfDiscourseElement = new HashMap();
+         }          
+
+         if (temporaryDiscourseElementAtPosition == null)
+         {
+             temporaryDiscourseElementAtPosition = new ArrayList();
+         }
+        // Map id to discourse position
+        discoursePositionOfDiscourseElement.put(id,new Integer(temporaryDiscourseElementAtPosition.size()));
+        
+        temporaryDiscourseElementAtPosition.add(id);                
+     }
+                 
+    public final MMAX2DiscourseElement[] getDiscourseElements()
+    {
+        ArrayList result = new ArrayList();
+        int pos = 0;
+        MMAX2DiscourseElement currentElement = null;
+        while(true)
+        {
+            currentElement = getDiscourseElementAtDiscoursePosition(pos);
+            if (currentElement !=null)
+            {
+                result.add(currentElement);
+                currentElement = null;
+                pos++;
+                continue;
+            }
+            else
+            {
+                break;
+            }
+        }
+        return (MMAX2DiscourseElement[]) result.toArray(new MMAX2DiscourseElement[0]);
+    }
+    
+    public final MMAX2DiscourseElement[] getDiscourseElements(Markable _markable)
+    {
+        ArrayList tempList = new ArrayList();
+        String[] markablesDEIDs = _markable.getDiscourseElementIDs();
+        for (int z=0;z<markablesDEIDs.length;z++)
+        {
+            Node temp = getDiscourseElementNode(markablesDEIDs[z]);
+            tempList.add(new MMAX2DiscourseElement(temp.getFirstChild().getNodeValue(), temp.getAttributes().getNamedItem("id").getNodeValue(),this.getDiscoursePositionFromDiscourseElementID(temp.getAttributes().getNamedItem("id").getNodeValue()),MMAX2Utils.convertNodeMapToHashMap(temp.getAttributes(),null)));
+        }        
+        return (MMAX2DiscourseElement[]) tempList.toArray(new MMAX2DiscourseElement[0]);
+    }
+    
+    public final MMAX2DiscourseElement getDiscourseElementAtDiscoursePosition(int discPos)
+    {
+        MMAX2DiscourseElement result = null;
+        String id = getDiscourseElementIDAtDiscoursePosition(discPos);
+        Node temp = getDiscourseElementNode(id);
+        if (temp != null)
+        {
+            result = new MMAX2DiscourseElement(temp.getFirstChild().getNodeValue(), temp.getAttributes().getNamedItem("id").getNodeValue(),this.getDiscoursePositionFromDiscourseElementID(temp.getAttributes().getNamedItem("id").getNodeValue()),MMAX2Utils.convertNodeMapToHashMap(temp.getAttributes(),null));        
+        }
+        return result;
+    }
+    
+    /*
+    public final ArrayList getAllMatchingDiscourseElementSequences(MMAX2DiscourseElementSequence entireInputSequence, String regExp, String toMatch)
+    {
+        // Todo: This is not very efficient
+        ArrayList tempResult = new ArrayList();
+        // Create pattern to match only once
+        Pattern pattern = Pattern.compile(regExp);
+        // Iterate over entireINputSequence, one de at a time
+        for (int leftBorder=0;leftBorder<entireInputSequence.getLength();leftBorder++)
+        {
+            // Create subsequence starting at pos leftBorder
+            // 0 at the beginning, moving right with each iteration
+            for (int len=entireInputSequence.getLength()-leftBorder;len>0;len--)
+            {
+                MMAX2DiscourseElementSequence inputSequence = entireInputSequence.getSubSequence(leftBorder,len);
+                    
+                // Get array version of current subsequence
+                MMAX2DiscourseElement[] input = inputSequence.getContent();
+                String temp = "";
+                // Create list to accept mapping from string positions to DEs at these positions
+                ArrayList stringPosToDiscourseElement = new ArrayList();
+        
+                // Iterate over all DiscourseElements in current subsequence
+                for (int z=0;z<input.length;z++)
+                {
+                    // Get current DE
+                    MMAX2DiscourseElement currentElement = input[z];
+                        
+                    if (toMatch.equalsIgnoreCase(""))
+                    {
+                        // toMatch is empty, so the de *text* is to be matched                
+                        for (int p=0;p<=currentElement.toString().length();p++)
+                        {
+                            // put currentElement reference at each pos in temp string, plus trailing space
+                            stringPosToDiscourseElement.add(currentElement);
+                        }
+                        // Create temp String to match
+                        if (currentElement.getAttributeValue("ignore", "false").equals("true"))
+                        {
+                            String temp2 = currentElement.toString();
+                            for (int i=0;i<=temp2.length();i++)
+                            {
+                                temp = temp + " ";
+                            }                    
+                        }
+                        else
+                        {
