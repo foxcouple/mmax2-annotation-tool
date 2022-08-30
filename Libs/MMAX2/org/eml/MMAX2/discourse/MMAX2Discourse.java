@@ -596,3 +596,203 @@ public class MMAX2Discourse implements DiscourseAPI
                         }
                         else
                         {
+                            temp = temp +currentElement.toString()+" ";
+                        }
+                    }
+                    else
+                    {
+                        // Some attribute value is to be used
+                        // Get val of attribute to be used (e.g. uh)
+                        String val = currentElement.getAttributeValue(toMatch, "+++");
+                        // Iterate over length of value to be added to string
+                        for (int p=0;p<val.length();p++)
+                        {
+                            // put currentElement reference at each pos in temp string
+                            stringPosToDiscourseElement.add(currentElement);
+                            // For a 3-character string, this fills pos's 0, 1 and 2
+                        }
+                
+                        // Create temp String to match                
+                        if (currentElement.getAttributeValue("ignore", "false").equals("true"))
+                        {
+                            // Iterate over length of value to be added to string + 1
+                            for (int i=0;i<=val.length();i++)
+                            {
+                                temp = temp + " ";
+                            }                    
+                        }
+                        else
+                        {
+                            temp = temp + val+" ";
+                        }                                                
+                        stringPosToDiscourseElement.add(null);
+                    }
+                }
+
+                Matcher m = pattern.matcher(temp);                       
+                ArrayList currentMatchedSequence = new ArrayList();
+                if (m.matches())            
+                {
+                    // Some strict match has been found
+                    // Retrieve start and end of it
+                    int start = m.start();
+                    int end = m.end();
+
+                    // Iterate over match span
+                    for (int q=start;q<end;q++)
+                    {
+                        // If this loop is entered, a match was found
+                        if (stringPosToDiscourseElement.get(q)==null)
+                        {
+                            continue;
+                        }
+                        if (currentMatchedSequence.contains((MMAX2DiscourseElement)stringPosToDiscourseElement.get(q))==false)
+                        {
+                            //tempResult.add((MMAX2DiscourseElement)stringPosToDiscourseElement.get(q));
+                            currentMatchedSequence.add((MMAX2DiscourseElement)stringPosToDiscourseElement.get(q));
+                        }
+                    }
+                    // Now, the current match (if any) has been collected in currentMatchedSequence
+                    if (currentMatchedSequence.size() > 0)
+                    {
+                        MMAX2DiscourseElementSequence newSequence = new MMAX2DiscourseElementSequence((MMAX2DiscourseElement[])currentMatchedSequence.toArray(new MMAX2DiscourseElement[0]));
+                        tempResult.add(newSequence);
+                    }        
+                }
+                if (currentMatchedSequence.size()>0)
+                {
+                    leftBorder = leftBorder + currentMatchedSequence.size()-1;
+                    break;
+                }            
+                currentMatchedSequence = null;   
+            }
+        }
+        return tempResult;
+        
+    }
+*/
+
+    public final MMAX2DiscourseElement getNextDiscourseElement(MMAX2DiscourseElement element)    
+    {
+        MMAX2DiscourseElement currentElement = null;
+        int currentDiscPos = 0;
+        if (element != null)
+        {
+            currentDiscPos = element.getDiscoursePosition()+1;
+        }
+        currentElement = getDiscourseElementAtDiscoursePosition(currentDiscPos);
+        return currentElement;
+    }
+    
+    public final MMAX2DiscourseElement getPreviousDiscourseElement(MMAX2DiscourseElement element)    
+    {
+        MMAX2DiscourseElement currentElement = null;
+        int currentDiscPos = getDiscourseElementCount();
+        if (element != null)
+        {
+            currentDiscPos = element.getDiscoursePosition()-1;
+        }
+        currentElement = getDiscourseElementAtDiscoursePosition(currentDiscPos);
+        return currentElement;
+    }
+    
+    /*
+    public final MMAX2DiscourseElementSequence getPreceedingDiscourseElements(int currentDiscPos, int len)    
+    {
+        // The element at currentDiscPos is NOT itself retrieved!
+        ArrayList tempresult = new ArrayList();
+        MMAX2DiscourseElement currentElement = null;
+        if (currentDiscPos > 0)
+        {
+            while(true)
+            {
+                // Move one position left
+                currentDiscPos--;                
+                currentElement = getDiscourseElementAtDiscoursePosition(currentDiscPos);
+                // currentElement will be null if no element could be retrieved from pos currentDiscPos
+                if (currentElement==null)
+                {
+                    // No more elements could be retrieved
+                    break;
+                }
+                if (currentElement.getAttributeValue("ignore","+++").equalsIgnoreCase("true")==false)
+                {
+                    // Add current element to *beginning of* tempresult if it is not ignorable (we move backwards here!)
+                    tempresult.add(0,currentElement);
+                    currentElement=null;
+                    if (tempresult.size()==len)
+                    {
+                        // len elements have been retrieved
+                        break;
+                    }
+                    continue;
+                }
+            }
+        }
+        if (tempresult.size()!=len)
+        {
+            System.err.println("Warning: Could not retrieve required "+len+" elements ("+tempresult.size()+" only) !");
+        }
+        return new MMAX2DiscourseElementSequence((MMAX2DiscourseElement[])tempresult.toArray(new MMAX2DiscourseElement[0]));
+    }
+    */
+    
+/*    
+    public final MMAX2DiscourseElement[] getMatchingDiscourseElementSequence(MMAX2DiscourseElementSequence inputSequence, String regExp, String startAfterDE, String toMatch)
+    {
+        MMAX2DiscourseElement[] input = inputSequence.getContent();
+        boolean started = false;
+        String temp = "";
+        ArrayList stringPosToDiscourseElement = new ArrayList();
+        
+        // Iterate over all input DiscourseElements
+        for (int z=0;z<input.length;z++)
+        {
+            // Get current DE
+            MMAX2DiscourseElement currentElement = input[z];
+            if (startAfterDE.equals("")==false)
+            {
+                // Only if some start offset was given at all
+                if (!started && currentElement.getID().equalsIgnoreCase(startAfterDE)==false)
+                {
+                    // Move to next and keep ignoring
+                    continue;
+                }
+                else
+                {
+                    // Ignore this one, but none afterwards
+                    if (!started)
+                    {
+                        started = true;
+                        continue;
+                    }
+                }                
+            }
+            
+            if (toMatch.equalsIgnoreCase(""))
+            {
+                // The de text is to be matched                
+                for (int p=0;p<=currentElement.toString().length();p++)
+                {
+                    // put currentElement reference at each pos in temp string, plus trailing space
+                    stringPosToDiscourseElement.add(currentElement);
+                }
+                // Create temp String to match
+                temp = temp + input[z].toString()+" ";
+            }
+            else
+            {
+                // Some attribute value is to be used
+                // Get val of attribute to be used
+                String val = input[z].getAttributeValue(toMatch, "+++");
+                for (int p=0;p<val.length();p++)
+                {
+                    // put currentElement reference at each pos in temp string
+                    stringPosToDiscourseElement.add(currentElement);
+                }
+                // Create temp String to match
+                temp = temp + val+" ";
+                stringPosToDiscourseElement.add(null);
+            }            
+        }
+        temp = temp.trim();
