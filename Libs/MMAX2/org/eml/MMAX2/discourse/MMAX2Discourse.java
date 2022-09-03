@@ -796,3 +796,207 @@ public class MMAX2Discourse implements DiscourseAPI
             }            
         }
         temp = temp.trim();
+//        System.out.println(temp);
+        Pattern p = Pattern.compile(regExp);
+        Matcher m = p.matcher(temp);
+            
+        ArrayList tempResult = new ArrayList();
+            
+        //while(m.find())
+        if(m.find())
+        {
+//            System.out.println("Match");
+            int start = m.start();
+//            System.out.println(start);
+            int end = m.end();
+//            System.out.println(end);
+            for (int q=start;q<end;q++)
+            {
+                if (stringPosToDiscourseElement.get(q)==null)
+                {
+                    continue;
+                }
+//                System.out.println(((MMAX2DiscourseElement)stringPosToDiscourseElement.get(q)).getString());
+                if (tempResult.contains((MMAX2DiscourseElement)stringPosToDiscourseElement.get(q))==false)
+                {
+                    tempResult.add((MMAX2DiscourseElement)stringPosToDiscourseElement.get(q));
+                }
+            }
+        }                                
+        return (MMAX2DiscourseElement[])tempResult.toArray(new MMAX2DiscourseElement[0]);            
+    }
+  
+*/    
+    
+    /** Returns the Node representation of the discourse element with id ID.*/
+    public final Node getDiscourseElementNode(String ID)
+    {
+        Node result = null;         
+        try        
+        {            
+            result = wordDOM.getElementById(ID);
+        }
+        catch (java.lang.NullPointerException ex)
+        {
+        	ex.printStackTrace();
+        }
+        return result;        
+    }
+    
+    protected final void setWordDOM(DocumentImpl dom)
+    {
+        wordDOM = dom;
+    }
+    
+    public final void resetForStyleSheetReapplication()
+    {
+    	boolean verbose = false;
+    	
+    	String verboseVar = System.getProperty("verbose");
+    	if (verboseVar != null && verboseVar.equalsIgnoreCase("true")) { verbose = true; }
+    	
+//        if (verbose) System.err.print("Resetting ... ");
+//        long time = System.currentTimeMillis();
+        
+        temporaryDiscourseElementAtPosition = new ArrayList();
+        temporaryDisplayEndPosition = new ArrayList();
+        temporaryDisplayStartPosition = new ArrayList();
+        lastStart = 0;
+        markableDisplayAssociation.clear();
+        markableDisplayAssociation = new HashMap();
+        hotSpotDisplayAssociation.clear();
+        hotSpotDisplayAssociation = new HashMap();
+        
+        hash = null;
+        
+        chart.resetMarkablesForStyleSheetReapplication();
+        chart.resetHasHandles();
+//        System.gc();        
+//        if (verbose) System.err.println("done in "+(System.currentTimeMillis()-time)+" milliseconds");
+
+    }
+    
+    /** This method is called when the deep refresh button on the MarkableLevelControlPanel is pressed. */
+    public final void reapplyStyleSheet()
+    {
+    	boolean verbose = false;
+    	
+    	String verboseVar = System.getProperty("verbose");
+    	if (verboseVar != null && verboseVar.equalsIgnoreCase("true")) { verbose = true;}
+    	
+        /* Reset currentDocument to new (empty) one .*/
+        mmax2.setCurrentDocument(new MMAX2Document(mmax2.currentDisplayFontName,mmax2.currentDisplayFontSize));
+        /* Set currentDocument's mmax2 reference. */
+        mmax2.getCurrentDocument().setMMAX2(mmax2);
+       
+        resetForStyleSheetReapplication();
+        
+//        if (verbose) System.err.print("Reapplying stylesheet "+currentStyleSheet+" ... ");
+//        long time = System.currentTimeMillis();
+        applyStyleSheet("");
+//        if (verbose) System.err.println("done in "+(System.currentTimeMillis()-time)+" milliseconds");     
+        
+//        if (verbose) System.err.print("Recreating Markable mappings ... ");
+//        time = System.currentTimeMillis();        
+        // Call to create e.g. DiscoursePositionToMarkableMappings
+        chart.createDiscoursePositionToMarkableMappings();
+        chart.setMarkableLevelDisplayPositions();
+//        if (verbose) System.err.println("done in "+(System.currentTimeMillis()-time)+" milliseconds");
+        chart.updateLabels();
+        mmax2.getCurrentTextPane().setStyledDocument((DefaultStyledDocument) mmax2.getCurrentDocument());
+        chart.initMarkableRelations(); 
+        mmax2.requestRefreshDisplay();
+        if (mmax2.getCurrentPrimaryMarkable()!= null)
+        {
+            chart.markableLeftClicked(mmax2.getCurrentPrimaryMarkable());
+        }
+    }
+    
+    /** Apply the XSL style sheet in this.styleSheetFileName to this.structureDOM. */ 
+    public final void applyStyleSheet(String overrideStyleFileName)
+    {        
+    	boolean verbose = true;
+    	
+    	String verboseVar = System.getProperty("verbose");
+    	if (verboseVar != null && verboseVar.equalsIgnoreCase("false"))
+    	{
+    		verbose = false;
+    	}
+
+    	
+        if (overrideStyleFileName.equals(""))
+        {
+            overrideStyleFileName = currentStyleSheet;
+        }
+        
+        /* Create string writer to accept XSL processor output */
+        incrementalTransformationResult = new StringWriter();
+
+        /* Create XSL processor */
+        TransformerFactory tFactory = TransformerFactory.newInstance();
+        Transformer transformer = null;
+        
+        try
+        {            
+            //transformer = tFactory.newTransformer(new StreamSource("FILE:"+overrideStyleFileName)); // This does not throw any errors!            
+        	transformer = tFactory.newTransformer(new StreamSource(new File(overrideStyleFileName).toURI().toString())); // This does not throw any errors!
+        }
+        catch (javax.xml.transform.TransformerConfigurationException ex )
+        {          
+            String error = ex.toString();
+            System.err.println(error);
+            JOptionPane.showMessageDialog(null,error,"Discourse: "+overrideStyleFileName,JOptionPane.ERROR_MESSAGE);
+        }
+        catch (java.lang.Exception ex)
+        {
+        	ex.printStackTrace();
+        }
+                             
+        try
+        {
+        	transformer.transform(new DOMSource(wordDOM ), new StreamResult(incrementalTransformationResult));
+        }
+        catch (javax.xml.transform.TransformerException ex)
+        {
+        	String error = ex.toString();
+        	System.err.println(error);
+        	System.err.println(ex.getMessageAndLocation());
+        	JOptionPane.showMessageDialog(null,error,"Discourse: "+overrideStyleFileName,JOptionPane.ERROR_MESSAGE);
+        	ex.printStackTrace();
+        }
+        
+        discourseElementAtPosition = (String[]) temporaryDiscourseElementAtPosition.toArray(new String[1]);
+        displayStartPosition = (Integer[]) temporaryDisplayStartPosition.toArray(new Integer[1]);
+        displayEndPosition = (Integer[]) temporaryDisplayEndPosition.toArray(new Integer[1]);
+        
+        temporaryDiscourseElementAtPosition.clear();
+        temporaryDisplayEndPosition.clear();
+        temporaryDisplayStartPosition.clear();
+        try
+        {
+            incrementalTransformationResult.close();
+        }
+        catch (java.io.IOException ex)
+        {
+            
+        }
+        
+        System.gc();            
+    }
+    
+    public final void setCurrentStyleSheet(String name)
+    {
+        currentStyleSheet = name;
+        try
+        {
+            mmax2.setReapplyBarToolTip(name);
+        }
+        catch (java.lang.NullPointerException ex)
+        {
+            //
+        }
+    }
+    
+    public final String getCurrentStyleSheet()
+    {
+        return currentStyleSheet;
