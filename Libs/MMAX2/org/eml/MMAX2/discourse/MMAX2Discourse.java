@@ -1188,3 +1188,180 @@ public class MMAX2Discourse implements DiscourseAPI
             if (choice != JOptionPane.OK_OPTION)
             {
                 return;
+            }  
+            else
+            {
+                // The user opted to remove the deletee nonetheless
+                // So update markables containing it
+                for (int z=0;z<entireMarkables.size();z++)
+                {        
+                    ((Markable)entireMarkables.get(z)).getMarkableLevel().setIsDirty(true,false);
+                    getCurrentMarkableChart().deleteMarkable(((Markable)entireMarkables.get(z)));
+                }
+                String[] deleteeArray = new String[1];
+                deleteeArray[0] = deleteesID;
+                for (int z=0;z<startedMarkables.size();z++)
+                {
+                    ((Markable)startedMarkables.get(z)).getMarkableLevel().setIsDirty(true,false);
+                    ((Markable)startedMarkables.get(z)).getMarkableLevel().unregisterMarkable(((Markable)startedMarkables.get(z)));        
+                    ((Markable)startedMarkables.get(z)).removeDiscourseElements(deleteeArray);
+                }
+                for (int z=0;z<endedMarkables.size();z++)
+                {
+                    ((Markable)endedMarkables.get(z)).getMarkableLevel().setIsDirty(true,false);
+                    ((Markable)endedMarkables.get(z)).getMarkableLevel().unregisterMarkable(((Markable)endedMarkables.get(z)));        
+                    ((Markable)endedMarkables.get(z)).removeDiscourseElements(deleteeArray);
+                }                                        
+            }
+        }// No intervening markables were found
+        
+        // Remove node to be deleted
+        deletee.getParentNode().removeChild(deletee);        
+        mmax2.getCurrentTextPane().setControlIsPressed(false);   
+        getCurrentMarkableChart().updateAllMarkableLevels();
+        mmax2.requestReapplyDisplay();
+        getCurrentMarkableChart().createDiscoursePositionToMarkableMappings();
+        mmax2.requestRefreshDisplay();
+        // New: Make modification saveable
+        mmax2.setIsBasedataModified(true,true);               
+    }
+    
+    public final void showEditBasedataElementWindow(ArrayList recentTexts, ArrayList recentAttributes, final Node referenceNode, final int mode)
+    {         
+        // Close any existing window
+        if (mmax2.editBasedataWindow != null)
+        {
+            mmax2.editBasedataWindow.setVisible(false);
+            mmax2.editBasedataWindow = null;
+        }
+        // Create new window
+        mmax2.editBasedataWindow = new JFrame("Edit base data");
+        mmax2.editBasedataWindow.addWindowFocusListener(new WindowFocusListener()
+        {
+            public final void windowGainedFocus(WindowEvent we)
+            {
+                
+            }   
+            
+            public final void windowLostFocus(WindowEvent we)
+            {
+                if (mmax2.editBasedataWindow != null)
+                {
+                    mmax2.editBasedataWindow.toFront();
+                }
+            }
+        });                                                    
+        
+        mmax2.editBasedataWindow.setResizable(false);
+        mmax2.editBasedataWindow.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        Box outerBox = Box.createVerticalBox();
+
+        Box upperBox = Box.createVerticalBox();
+        final JComboBox recentTextsBox = new JComboBox(recentTexts.toArray(new String[0]));
+        upperBox.add(recentTextsBox);
+        upperBox.add(Box.createVerticalStrut(10));
+        final JTextField textField = new JTextField("",20);
+        // If the window was called for edit, preset current word text
+        if (mode == MMAX2Constants.EDIT_DE)
+        {
+            textField.setText(referenceNode.getChildNodes().item(0).getNodeValue());
+        }
+        upperBox.add(textField);
+
+        Box middleBox = Box.createVerticalBox();
+        final JComboBox recentAttributesBox = new JComboBox(recentAttributes.toArray(new String[0]));
+        middleBox.add(recentAttributesBox);
+        middleBox.add(Box.createVerticalStrut(10));
+        final JTextField attributeField = new JTextField("",20);
+        // If the window was called to edit, preset current word attributes
+        if (mode==MMAX2Constants.EDIT_DE)
+        {
+            attributeField.setText(MMAX2Utils.toAttributeString(referenceNode.getAttributes(),true));
+        }
+        
+        middleBox.add(attributeField);
+
+        recentTextsBox.addActionListener(new ActionListener()
+        {
+            public final void actionPerformed(ActionEvent ae)
+            {
+                textField.setText((String)recentTextsBox.getSelectedItem());
+            }                    
+        });                                                    
+
+        recentAttributesBox.addActionListener(new ActionListener()
+        {
+            public final void actionPerformed(ActionEvent ae)
+            {
+                attributeField.setText((String)recentAttributesBox.getSelectedItem());
+            }                    
+        });                                                    
+        
+        Box bottomBox = Box.createHorizontalBox();
+        JButton okButton = new JButton("OK");
+        okButton.setFont(okButton.getFont().deriveFont((float)12));
+        okButton.setBorder(new EmptyBorder(0,0,1,1));
+        bottomBox.add(okButton);
+        bottomBox.add(Box.createHorizontalStrut(10));
+        
+        okButton.addActionListener(new ActionListener()
+        {
+            public final void actionPerformed(ActionEvent ae)
+            {
+                mmax2.editBasedataWindow.setVisible(false);
+                mmax2.editBasedataWindow=null;
+                mmax2.setBlockAllInput(false);
+                basedataTextAndAttributeSelected(referenceNode, mode, textField.getText().trim(),attributeField.getText().trim());
+            }                    
+        });                                                    
+        
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.setFont(cancelButton.getFont().deriveFont((float)12));
+        cancelButton.setBorder(new EmptyBorder(0,0,1,1));        
+        bottomBox.add(cancelButton);
+        
+        cancelButton.addActionListener(new ActionListener()
+        {
+            public final void actionPerformed(ActionEvent ae)
+            {
+                mmax2.editBasedataWindow.setVisible(false);
+                mmax2.editBasedataWindow=null;
+                mmax2.setBlockAllInput(false);
+                basedataTextAndAttributeSelected(referenceNode, MMAX2Constants.BASEDATA_EDIT_CANCEL, "","");
+            }
+        });
+        
+        JPanel wordPanel = new JPanel();
+        wordPanel.setBorder(new TitledBorder("Enter element text (required)"));
+        wordPanel.add(upperBox);
+        outerBox.add(wordPanel);
+
+        JPanel attributePanel = new JPanel();
+        attributePanel.setBorder(new TitledBorder("Enter element attributes (optional)"));
+        attributePanel.add(middleBox);
+        outerBox.add(attributePanel);                        
+        
+        JPanel controlPanel = new JPanel();
+        controlPanel.add(bottomBox);
+        outerBox.add(controlPanel);
+        
+        mmax2.editBasedataWindow.getContentPane().add(outerBox);
+        mmax2.editBasedataWindow.pack();
+        mmax2.editBasedataWindow.setLocationRelativeTo(getMMAX2());
+        mmax2.setBlockAllInput(true);
+        mmax2.editBasedataWindow.setVisible(true);
+    }
+    
+    
+    public final void basedataTextAndAttributeSelected(Node referenceNode, int mode, String text, String attribute)
+    {        
+        if (mode == MMAX2Constants.BASEDATA_EDIT_CANCEL)
+        {
+            return;
+        }
+        
+        // Update recency lists
+        if (recentTextEntries.contains(text)==false && text.equals("")==false)
+        {
+            recentTextEntries.add(text);
+        }
