@@ -1000,3 +1000,191 @@ public class MMAX2Discourse implements DiscourseAPI
     public final String getCurrentStyleSheet()
     {
         return currentStyleSheet;
+    }
+    
+    public final void setStyleSheetFileNames(String[] names)
+    {
+        styleSheetFileNames = names;
+    }
+
+    public final String[] getStyleSheetFileNames()
+    {
+        return styleSheetFileNames;
+    }
+    
+       
+    /** This method returns the current length of this.incrementalTransformationResult. It is used to associate Discourse Elements
+        with display string positions during stylesheet execution. */
+    public final int getCurrentDocumentPosition()
+    {
+        incrementalTransformationResult.flush();
+        return incrementalTransformationResult.getBuffer().length();
+    }   
+    
+    /** This method returns the next chunk of the incremental transformation result that has not yet been processed. */
+    public final String getNextDocumentChunk()
+    {        
+        incrementalTransformationResult.flush();
+        String temp = incrementalTransformationResult.toString();                
+        String result =  temp.substring(lastStart);
+        lastStart = temp.length();
+        return result;                
+    }
+    
+    public final MarkableLevel getMarkableLevelFromAbsoluteFileName(String absFileName)
+    {
+        MarkableLevel result = null;
+        MarkableLevel[] levels = getCurrentMarkableChart().getActiveLevels();
+        for (int z=0;z<levels.length;z++)
+        {
+            if(levels[z].getAbsoluteMarkableFileName().equals(absFileName))
+            {
+                result = levels[z];
+                break;
+            }
+        }
+        return result;
+    }
+    
+    public final boolean isCurrentlyLoaded(String absoluteMarkableFileName)
+    {
+        boolean found = false;
+        MarkableLevel[] levels = getCurrentMarkableChart().getActiveLevels();
+        for (int z=0;z<levels.length;z++)
+        {
+            if(levels[z].getAbsoluteMarkableFileName().equals(absoluteMarkableFileName))
+            {
+                found = true;
+                break;
+            }
+        }
+        return found;
+    }
+    
+    public final String getStyleSheetOutput()
+    {
+        incrementalTransformationResult.flush();
+        return incrementalTransformationResult.toString();
+    }
+    
+    public final void putInHash(String key, String value)
+    {
+        if (hash==null) hash = new HashMap();
+        hash.put(key,value);
+    }
+    
+    public final String getFromHash(String key)
+    {
+        String value="";
+        if (hash != null)
+        {
+            value = (String) hash.get(key);            
+            if (value == null)
+            {
+                value="";
+            }
+        }       
+        return value;
+    }
+    
+    
+    public final MarkableLevel getMarkableLevelByName(String name, boolean interactive)
+    {
+        return getCurrentMarkableChart().getMarkableLevelByName(name,interactive);
+    }
+    
+    public final MarkableChart getCurrentMarkableChart()
+    {
+        return chart;
+    }
+    
+    public final String[] getAllDiscourseElementIDs()
+    {
+        return discourseElementAtPosition;
+    }
+
+    public final int getDiscourseElementCount()
+    {
+        return discourseElementAtPosition.length;
+    }
+    
+    public final void performNonGUIInitializations()
+    {                
+        getCurrentMarkableChart().createDiscoursePositionToMarkableMappings();
+        getCurrentMarkableChart().setMarkableLevelDisplayPositions();
+        getCurrentMarkableChart().initMarkableRelations();        
+        getCurrentMarkableChart().updateLabels();                        
+    }
+       
+    public final void setCommonBasedataPath(String path)
+    {
+        commonBasedataPath = path;
+    }
+    
+    public final String getCommonBasedataPath()
+    {
+        return commonBasedataPath;
+    }
+    
+    public final void requestDeleteBasedataElement(Node deletee)
+    {
+        // Get string id of base data element to be removed
+        String deleteesID = deletee.getAttributes().getNamedItem("id").getNodeValue();
+        // Get list of markables started by it
+        ArrayList startedMarkables = getCurrentMarkableChart().getAllStartedMarkables(deleteesID);
+        // Get list of markables ended by it
+        ArrayList endedMarkables = getCurrentMarkableChart().getAllEndedMarkables(deleteesID);
+        
+        ArrayList entireMarkables = new ArrayList();
+        
+        // Determine if there is a markable that consists of the deletee only
+        // Iterate over all started markables backwards
+        for (int b=startedMarkables.size()-1;b>=0;b--)
+        {
+            if (endedMarkables.contains((Markable)startedMarkables.get(b)))
+            {
+                // The current started markable is also finished by the same de
+                entireMarkables.add((Markable)startedMarkables.get(b));
+                // Remove
+                endedMarkables.remove((Markable)startedMarkables.get(b));
+                startedMarkables.remove(b);
+            }
+        }
+        
+        if (startedMarkables.size() > 0 || endedMarkables.size()>0 || entireMarkables.size()>0)
+        {
+            // The deletee is the left or right border of or identical to at least one markable
+            String message = "The base data element to be deleted is contained in the following markable(s):\n";
+            if (entireMarkables.size()>0)
+            {
+                message = message + "Completely:\n";
+            }
+            for (int z=0;z<entireMarkables.size();z++)
+            {
+                    message = message + ((Markable)entireMarkables.get(z)).toString()+"\n";
+            }
+            
+            if (startedMarkables.size()>0)
+            {
+                message = message + "As first element:\n";
+            }
+            for (int z=0;z<startedMarkables.size();z++)
+            {
+                    message = message + ((Markable)startedMarkables.get(z)).toString()+"\n";
+            }
+            
+            if (endedMarkables.size()>0)
+            {
+                message = message + "As last element:\n";
+            }
+            for (int z=0;z<endedMarkables.size();z++)
+            {
+                    message = message + ((Markable)endedMarkables.get(z)).toString()+"\n";
+            }
+            message = message + "\nPress 'OK' to delete anyway and adapt/delete these markables, or 'Cancel' to cancel deletion!";
+            // Show dialogue
+            int choice = JOptionPane.showConfirmDialog(this.getMMAX2(),message,"Confirm base data deletion",JOptionPane.OK_CANCEL_OPTION,JOptionPane.INFORMATION_MESSAGE);           
+            // Do sth. only if user pressed OK
+            if (choice != JOptionPane.OK_OPTION)
+            {
+                return;
