@@ -1365,3 +1365,199 @@ public class MMAX2Discourse implements DiscourseAPI
         {
             recentTextEntries.add(text);
         }
+        if (recentAttributeEntries.contains(attribute)==false && attribute.equals("")==false)
+        {
+            recentAttributeEntries.add(attribute);
+        }
+        
+        // Convert received attribute string to list 
+        ArrayList attributesAsList = MMAX2Utils.toAttributeList(attribute);
+                
+        if (mode == MMAX2Constants.INSERT_DE_BEFORE || mode == MMAX2Constants.INSERT_DE_AFTER)
+        {
+            // A new element is to be added either before or after referenceNode
+            // Create new element
+            Element newWord = referenceNode.getParentNode().getOwnerDocument().createElement("word");
+            // Add word text as textual child to new element
+            newWord.appendChild(referenceNode.getParentNode().getOwnerDocument().createTextNode(text));
+            
+            // Add attributes as received from the Window. ID is certain to be not contained here!
+            for (int z=0;z<attributesAsList.size();z++)
+            {
+                // Get current entry of form attribute="value"
+                String currentEntry = (String)attributesAsList.get(z);
+                newWord.setAttribute(currentEntry.substring(0,currentEntry.indexOf("=")),currentEntry.substring(currentEntry.indexOf("=")+1));
+            }
+                        
+            String newID="";          
+        
+            if (mode == MMAX2Constants.INSERT_DE_BEFORE)
+            {
+                // If we want to insert _before_ referenceNode, we must find its left neighbour as leftReferenceNode
+                Node leftReferenceNode = referenceNode.getPreviousSibling();
+                
+                // Move left to the next ELEMENT type
+                while(leftReferenceNode != null && leftReferenceNode.getNodeType()!=Node.ELEMENT_NODE)
+                {
+                    leftReferenceNode = leftReferenceNode.getPreviousSibling();
+                }
+                
+                // Create new id
+                newID = createBasedataID(leftReferenceNode, referenceNode);
+                
+                // NewID will be "" when none could be created
+                if (newID.equals("")==false)
+                {
+                    // Set new id
+                    newWord.setAttribute("id",newID);
+                    referenceNode.getParentNode().insertBefore(newWord, referenceNode);                    
+                    // Make new element retrievable by id
+                    mmax2.getCurrentDiscourse().addWithID(newID, newWord);                                
+                }
+            }
+            else if (mode == MMAX2Constants.INSERT_DE_AFTER)
+            {
+                // If we want to insert _after_ referenceNode, we must find its right neighbour as rightReferenceNode
+                Node rightReferenceNode = referenceNode.getNextSibling();
+                
+                // Move right to the next ELEMENT type
+                while(rightReferenceNode != null && rightReferenceNode.getNodeType()!=Node.ELEMENT_NODE)
+                {
+                    rightReferenceNode=rightReferenceNode.getNextSibling();
+                }
+
+                // Create new id
+                newID = createBasedataID(referenceNode,rightReferenceNode);
+                
+                // NewID will be "" when none could be created
+                if (newID.equals("")==false)
+                {
+                    newWord.setAttribute("id",newID);
+                    referenceNode.getParentNode().insertBefore(newWord, rightReferenceNode);
+                    // Make new element retrievable by id
+                    mmax2.getCurrentDiscourse().addWithID(newID, newWord);                    
+                }
+            }
+        }
+        // no insert
+        else if (mode == MMAX2Constants.EDIT_DE)
+        {
+            // the element was only edited
+            // Remove old textual child
+            referenceNode.removeChild(referenceNode.getFirstChild());
+            // Create and add new textual child
+            referenceNode.appendChild(referenceNode.getParentNode().getOwnerDocument().createTextNode(text));
+            // Remove all attributes           
+            NamedNodeMap attribs = referenceNode.getAttributes();
+            for (int z=attribs.getLength()-1;z>=0;z--)
+            {
+                if (attribs.item(z).getNodeName().equalsIgnoreCase("id"))
+                {
+                    // Skip id attribute when removing attributes
+                    continue;
+                }
+                attribs.removeNamedItem((String)attribs.item(z).getNodeName());
+            }
+            // Add attributes            
+            for (int z=0;z<attributesAsList.size();z++)
+            {                
+                String currentEntry = (String)attributesAsList.get(z);                
+                ((Element)referenceNode).setAttribute(currentEntry.substring(0,currentEntry.indexOf("=")),currentEntry.substring(currentEntry.indexOf("=")+1));
+            }                        
+        }
+        mmax2.getCurrentTextPane().setControlIsPressed(false);
+        //System.err.println(0);
+        if (mmax2.getIsAutoReapplyEnabled())
+        {
+        	System.err.println("Auto-reapplying ...");
+        	mmax2.requestReapplyDisplay();
+        }
+
+        getCurrentMarkableChart().updateAllMarkableLevels();
+        //System.err.println(1);
+        mmax2.requestReapplyDisplay();
+        //System.err.println(2);
+        getCurrentMarkableChart().createDiscoursePositionToMarkableMappings();
+        //System.err.println(3);
+        // New July 24th 2006: This fix will let bd-editing work
+        mmax2.requestRefreshDisplay();
+        //System.err.println(4);
+        // New: Make modification saveable
+        mmax2.setIsBasedataModified(true,true);
+    }
+       
+
+    /** This method receives two Nodes with IDs and creates a new ID in between these two. */
+    private final String createBasedataID(Node leftNeighbour, Node rightNeighbour)
+    {
+        String leftID="";
+        String rightID="";
+        String commonElementNameSpace="";
+        String newID="";
+        
+        BigDecimal leftNumber= new BigDecimal("0.00000000000000000000");
+        BigDecimal rightNumber= new BigDecimal("0.00000000000000000000");
+        BigDecimal difference= new BigDecimal("0.00000000000000000000");
+                
+        if (leftNeighbour != null && rightNeighbour != null)
+        {
+            // Normal case, a new element is to be added in between two existing ones
+            leftID = leftNeighbour.getAttributes().getNamedItem("id").getNodeValue();
+            rightID = rightNeighbour.getAttributes().getNamedItem("id").getNodeValue();
+            commonElementNameSpace = leftID.substring(0,leftID.indexOf("_"));
+            if (commonElementNameSpace.equalsIgnoreCase(rightID.substring(0,rightID.indexOf("_")))==false)
+            {
+                System.err.println("Error: Different base data element name spaces!");
+                return null;
+            }
+            
+            // Get numerical value of id left of insertion point
+            leftNumber = new BigDecimal(leftID.substring(leftID.indexOf("_")+1));
+            // Get numerical value of id left of insertion point
+            rightNumber = new BigDecimal((rightID.substring(rightID.indexOf("_")+1)));
+            // Calculate difference
+            difference = rightNumber.subtract(leftNumber);
+            difference = difference.divide(new BigDecimal("2.00000000000000000000"));
+            newID = commonElementNameSpace+"_"+((BigDecimal)(leftNumber.add(difference)));            
+            
+        }
+        else
+        {
+            // One of the nodes is null
+            if (leftNeighbour == null)
+            {
+                // The new element is to be added before the first one
+                // So its Number must be smaller than that of rightNeighbour
+                // RightID must exist
+                rightID = rightNeighbour.getAttributes().getNamedItem("id").getNodeValue();
+                rightNumber = new BigDecimal(rightID.substring(rightID.indexOf("_")+1));
+                difference = rightNumber.divide(new BigDecimal("2.00000000000000000000"));
+                commonElementNameSpace = rightID.substring(0,rightID.indexOf("_"));
+                newID = commonElementNameSpace+"_"+difference;
+            }
+            else
+            {
+                // The new element is to be added after the last one
+                // So its Number must be higher than that of leftNeighbour
+                // LeftID must exist
+                leftID = leftNeighbour.getAttributes().getNamedItem("id").getNodeValue();
+                leftNumber = new BigDecimal(leftID.substring(leftID.indexOf("_")+1));
+                difference = leftNumber.add(new BigDecimal("1.00000000000000000000"));
+                
+                commonElementNameSpace = leftID.substring(0,leftID.indexOf("_"));                
+                newID = commonElementNameSpace+"_"+difference;
+            }            
+        }  
+        
+        if (newID.endsWith(".0"))
+        {
+            newID = newID.substring(0,newID.length()-2);
+        }
+    
+        System.err.println(newID);        
+        return newID;
+    }
+    
+    
+    /** This method is called by the MMAX2BasedataEditActionSelector upon selection of an 'add' action.*/
+    public final void requestAddBasedataElement(Node referenceNode, int mode)
