@@ -1561,3 +1561,150 @@ public class MMAX2Discourse implements DiscourseAPI
     
     /** This method is called by the MMAX2BasedataEditActionSelector upon selection of an 'add' action.*/
     public final void requestAddBasedataElement(Node referenceNode, int mode)
+    {        
+        // Just delegate the call to the method for displaying the edit window
+        showEditBasedataElementWindow(recentTextEntries, recentAttributeEntries, referenceNode, mode);
+    }
+    
+    public final void saveBasedata(String newFileName)
+    {
+        if (mmax2 != null)
+        {
+            if (mmax2.getIsBasedataModified()==false)
+            {
+                System.err.println("Basedata is clean, not saving!");
+                return;
+            }
+        }
+        System.err.println("Saving basedata ... ");
+        if (newFileName.equals("")==false)
+        {
+            wordFileName= newFileName;
+        }
+                
+        /* Test file for existence */
+        File destinationFile = new File(wordFileName);
+        if(destinationFile.exists())
+        {
+            /* The file to be written is already existing, so create backup copy first*/
+            /* This should be the normal case */
+            System.err.println("Filename "+destinationFile.getAbsolutePath()+" exists, creating backup (.bak) file!");
+            File oldDestinationFile = new File(wordFileName +".bak");
+            if (oldDestinationFile.exists())
+            {
+                System.err.println("Removing old .bak file!");
+                oldDestinationFile.delete();
+                oldDestinationFile = new File(wordFileName +".bak");
+            }
+            destinationFile.renameTo(oldDestinationFile);
+        }                   
+        
+	/* Write DOM to file */
+        System.out.println("Writing to file " + wordFileName);
+      
+        BufferedWriter fw = null;
+        
+        try
+        {
+            fw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(wordFileName),"UTF-8"));
+        }
+        catch (java.io.IOException ex)
+        {
+            ex.printStackTrace();
+        }                
+  
+        String dtdReference = "";
+        
+        if (wordDOM.getDoctype().getPublicId() != null)
+        {
+            dtdReference = "<!DOCTYPE words PUBLIC \""+wordDOM.getDoctype().getPublicId()+"\">";
+        }
+        else if (wordDOM.getDoctype().getSystemId() != null)
+        {
+            dtdReference = "<!DOCTYPE words SYSTEM \""+wordDOM.getDoctype().getSystemId()+"\">";
+        }        
+
+        String encoding = wordDOM.getEncoding();
+        if (encoding == null)
+        {
+            encoding = "UTF-8";
+        }
+        String wordFileHeader = "<?xml version='1.0' encoding='"+encoding+"'?>";
+        
+        try
+        {
+            fw.write(wordFileHeader+"\n"+dtdReference+"\n<words>\n");
+            fw.flush();
+        }
+        catch (java.io.IOException ex)
+        {
+            System.err.println(ex.getMessage());
+        }
+                
+        // Item 0 is the doctype !!
+        Node currentWordNode = wordDOM.getChildNodes().item(1).getFirstChild();
+        
+        String currentAttributes = "";
+        while(currentWordNode != null)
+        {            
+            String id = currentWordNode.getAttributes().getNamedItem("id").getNodeValue();
+            currentAttributes = MMAX2Utils.toAttributeString(getDiscourseElementByID(id).getAttributes() ,false);
+            try
+            {
+                fw.write("<word "+currentAttributes.trim()+">");
+                Node childNode = currentWordNode.getFirstChild();
+                String childText = childNode.getNodeValue();
+//                <		ersetzen Sie durch		&lt;
+//                >		ersetzen Sie durch		&gt;
+//                &		ersetzen Sie durch		&amp;
+//                "		ersetzen Sie durch		&quot;
+//                '		ersetzen Sie durch		&apos;
+
+                if (childText.equals("&"))
+                {
+                    childText = "&amp;";
+                }
+                else if (childText.equals(">"))
+                {
+                    childText = "&gt;";
+                }
+                else if (childText.equals("<"))
+                {
+                    childText = "&lt;";
+                }
+                else if (childText.equals("\""))
+                {
+                    childText = "&quot;";
+                }
+                else if (childText.equals("'"))
+                {
+                    childText = "&apos;";
+                }
+                                
+                fw.write(childText);
+
+                fw.write("</word>\n");
+            }
+            catch (java.io.IOException ex)
+            {
+                
+            }
+            currentWordNode = currentWordNode.getNextSibling();
+        }        
+        
+        try
+        {
+            fw.write("</words>");
+            fw.flush();
+            fw.close();
+        }
+        catch (java.io.IOException ex)
+        {
+            System.err.println(ex.getMessage());
+        }
+        if (mmax2 != null)
+        {
+            getMMAX2().setIsBasedataModified(false,false);            
+        }
+    }    
+}
