@@ -428,3 +428,209 @@ public class MMAX2DiscourseLoader
 //                        }
 //                    
 //                        /*
+//                        try
+//                        {
+//                            attributeStrings[z] = annotations.item(z).getAttributes().getNamedItem("default").getNodeValue();
+//                        }
+//                        catch (java.lang.NullPointerException ex)
+//                        {
+//                            attributeStrings[z] = "";
+//                        }                                        
+//                    */
+//                        try
+//                        {   
+//                            customizationFileNames[z] = commonCustomizationPath+annotations.item(z).getAttributes().getNamedItem("customization_file").getNodeValue();
+//                        }
+//                        catch (java.lang.NullPointerException ex)
+//                        {
+//                            customizationFileNames[z] = "";
+//                        }
+//                        try
+//                        {
+//                            startupModes[z] = annotations.item(z).getAttributes().getNamedItem("at_startup").getNodeValue();
+//                        }
+//                        catch (java.lang.NullPointerException ex)
+//                        {
+//                            startupModes[z] = "active";
+//                        }                          
+//                    }
+//                }
+//            }
+//        }
+        
+      	if (styleSheetFileNames.length ==0)
+      	{
+            JOptionPane.showMessageDialog(null,"You must specify at least one XSL style sheet file!","DiscourseLoader: "+mmaxFileName,JOptionPane.ERROR_MESSAGE);
+            System.exit(0);                              		
+      	}
+        if (wordFileName.equals("")==true) 
+        {
+        	System.err.println("No word file name given!");
+        	System.exit(0);
+        }
+                  
+        DiscourseElementFileLoader deloader = new DiscourseElementFileLoader();
+        if (isVerbose()) {System.err.print("\n  Loading basedata from "+wordFileName+" ... ");}
+        int b=deloader.load(wordFileName);
+        if (isVerbose()) {System.err.println(b+" elements have been loaded!");}
+
+        /* Create MMAX2Discourse object */
+        currentDiscourse = new MMAX2Discourse(withGUI);
+        currentDiscourse.setWordDOM(deloader.getDOM());
+        currentDiscourse.setWordFileName(wordFileName);
+        currentDiscourse.setCommonBasedataPath(commonBasedataPath);
+        
+        if (withGUI) { currentDiscourse.getCurrentMarkableChart().currentLevelControlWindow.setStyleSheetSelector(styleSheetFileNames); }
+        currentDiscourse.setCurrentStyleSheet(styleSheetFileNames[0]);        
+        currentDiscourse.setNameSpace(nameSpace);        
+        currentDiscourse.setStyleSheetFileNames(this.styleSheetFileNames);
+        
+        // Create one MFL instance
+        MarkableFileLoader mfl = new MarkableFileLoader();
+        int currentMaxID =0;
+        int totalMaxID = 0;
+        // Iterate over all markable file names found
+        for (int p=0;p<levelCount;p++)
+        {
+//            if (isVerbose()) System.err.println("\n  Loading markable level "+markableLevelNames[p]+" ... ");
+            mfl.load(markableFileNames[p],markableLevelNames[p],schemeFileNames[p],customizationFileNames[p], startupModes[p]);
+
+            // Get markable level object. Up to now, this has only a non-null DOM, but no markables yet
+            MarkableLevel newLevel = mfl.getMarkableLevel();
+            // Set reference to associated discourse. This is required for next call (cf. below)
+            newLevel.setCurrentDiscourse(currentDiscourse);
+            currentMaxID = newLevel.createMarkables();            
+            if (currentMaxID > totalMaxID) totalMaxID = currentMaxID;
+            currentDiscourse.getCurrentMarkableChart().addMarkableLevel(newLevel);
+        }                
+        currentDiscourse.getCurrentMarkableChart().setNextFreeMarkableIDNum(totalMaxID+1);
+    }
+    
+    public boolean isVerbose()
+    {
+    	return VERBOSE;
+    }
+
+    public boolean isDebug()
+    {
+    	return DEBUG;
+    }
+
+    
+    private final String toPlatformdependentPath(String inPath)
+    {
+        String result = "";
+        // Determine current platform
+        if (java.io.File.separator.equals("/"))
+        {
+            // The current platform is UNIX
+            result = inPath.replace('\\', '/');
+            
+        }
+        else
+        {
+            // The current platform is Windows
+            result = inPath.replace('/', '\\');
+        }        
+        return result;
+    }
+    
+    public final String getCommonQueryPath()
+    {
+        return commonQueryPath;
+    }
+
+    
+    public final String[] getUserSwitches()
+    {
+        return userSwitches;
+    }
+        
+    public final String getWorkingDirectory()
+    {
+        return rootPath;
+    }
+    
+    /** Returns the Discourse object currently loaded by this loader. */
+    public final MMAX2Discourse getCurrentDiscourse()
+    {
+        return currentDiscourse;
+    }    
+               
+    public static String addHotSpot(String toDisplay, String hotSpotText)
+    {
+        int extent = toDisplay.length();
+        /** Get current document position, i.e. character stream position. */
+        int currentDocumentPosition = currentDiscourse.getCurrentDocumentPosition();
+        for (int temp=0;temp<extent;temp++)
+        {
+            currentDiscourse.hotSpotDisplayAssociation.put(new Integer(currentDocumentPosition+temp),hotSpotText);
+        }
+        return toDisplay;
+    }
+    
+    
+    public static String concat(String string1, String string2)
+    {
+        return string1+" "+string2;
+    }
+    
+    public static String concat(String string1, String string2, String string3)
+    {
+        return string1+" "+string2+" "+string3;
+    }
+    
+    public static String concat(String string1, String string2, String string3, String string4)
+    {
+        return string1+" "+string2+" "+string3+" "+string4;
+    }
+    
+    public static String concat(String string1, String string2, String string3, String string4, String string5)
+    {
+        return string1+" "+string2+" "+string3+" "+string4+" "+string5;
+    }
+    
+    /** Adds a left markable handle (clickable area directly associated with a markable) of size extent. */    
+    public static void addLeftMarkableHandle(String layerName, String markableId, int extent)    
+    {
+        /** Get reference to markable to which handle is added. */
+        Markable currentMarkable = currentDiscourse.getCurrentMarkableChart().getMarkableLevelByName(layerName,true).getMarkableByID(markableId);
+        /** Get current document position, i.e. character stream position. */
+        int currentDocumentPosition = currentDiscourse.getCurrentDocumentPosition();
+        currentMarkable.addLeftHandlePosition(currentDocumentPosition);        
+        for (int temp=0;temp<extent;temp++)
+        {
+            currentDiscourse.markableDisplayAssociation.put(new Integer(currentDocumentPosition+temp),currentMarkable);
+        }
+    }        
+    
+    /** Adds a right markable handle (clickable area directly associated with a markable) of size extent. */    
+    public static void addRightMarkableHandle(String layerName, String markableId, int extent)    
+    {
+        /** Get reference to markable to which handle is added. */
+        Markable currentMarkable = currentDiscourse.getCurrentMarkableChart().getMarkableLevelByName(layerName,true).getMarkableByID(markableId);
+        /** Get current document position, i.e. character stream position. */
+        int currentDocumentPosition = currentDiscourse.getCurrentDocumentPosition();       
+        currentMarkable.addRightHandlePosition(currentDocumentPosition+extent-1);        
+        for (int temp=0;temp<extent;temp++)
+        {
+            currentDiscourse.markableDisplayAssociation.put(new Integer(currentDocumentPosition+temp),currentMarkable);
+        }
+    }    
+
+
+    
+    
+    
+    
+
+    /** Adds handleText as a left markable handle (clickable area directly associated with a markable). */    
+    public static String addLeftMarkableHandle(String layerName, String markableId, String handleText, int highlightPos)    
+    {
+        /** Get reference to markable to which handle is added. */
+        Markable currentMarkable = currentDiscourse.getCurrentMarkableChart().getMarkableLevelByName(layerName,true).getMarkableByID(markableId);
+        /** Get current document position, i.e. character stream position. */
+        int currentDocumentPosition = currentDiscourse.getCurrentDocumentPosition();
+        if (highlightPos == 1)
+        {
+            currentMarkable.addLeftHandlePosition(currentDocumentPosition);    
