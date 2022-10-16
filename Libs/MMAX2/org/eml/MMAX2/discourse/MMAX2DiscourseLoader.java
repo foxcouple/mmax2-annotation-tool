@@ -634,3 +634,214 @@ public class MMAX2DiscourseLoader
         if (highlightPos == 1)
         {
             currentMarkable.addLeftHandlePosition(currentDocumentPosition);    
+        }
+        else
+        {
+            currentMarkable.addLeftHandlePosition(currentDocumentPosition+highlightPos-1);
+        }
+        int extent = handleText.length();
+        for (int temp=0;temp<extent;temp++)
+        {
+            currentDiscourse.markableDisplayAssociation.put(new Integer(currentDocumentPosition+temp),currentMarkable);
+        }
+        return handleText;
+    }        
+
+    /** Adds handleText as a left markable handle (clickable area directly associated with a markable). */    
+    public static String addLeftMarkableHandle(String layerName, String markableId, String handleText)    
+    {
+        /** Get reference to markable to which handle is added. */
+        Markable currentMarkable = currentDiscourse.getCurrentMarkableChart().getMarkableLevelByName(layerName,true).getMarkableByID(markableId);
+        /** Get current document position, i.e. character stream position. */
+        int currentDocumentPosition = currentDiscourse.getCurrentDocumentPosition();
+        currentMarkable.addLeftHandlePosition(currentDocumentPosition);    
+        int extent = handleText.length();
+        for (int temp=0;temp<extent;temp++)
+        {
+            currentDiscourse.markableDisplayAssociation.put(new Integer(currentDocumentPosition+temp),currentMarkable);
+        }
+        return handleText;
+    }        
+    
+    
+    /** Adds handleText as a right markable handle (clickable area directly associated with a markable). */    
+    public static String addRightMarkableHandle(String layerName, String markableId, String handleText, int highlightPos)    
+    {
+        /** Get reference to markable to which handle is added. */
+        Markable currentMarkable = currentDiscourse.getCurrentMarkableChart().getMarkableLevelByName(layerName,true).getMarkableByID(markableId);
+        int extent = handleText.length();
+        /** Get current document position, i.e. character stream position. */
+        int currentDocumentPosition = currentDiscourse.getCurrentDocumentPosition();
+        if (highlightPos == extent)
+        {
+            currentMarkable.addRightHandlePosition(currentDocumentPosition+extent-1);       
+        }
+        else
+        {
+            currentMarkable.addRightHandlePosition(currentDocumentPosition+extent-1-(extent-highlightPos));
+        }
+        for (int temp=0;temp<extent;temp++)
+        {
+            currentDiscourse.markableDisplayAssociation.put(new Integer(currentDocumentPosition+temp),currentMarkable);
+        }
+        return handleText;
+    }    
+    
+    /** Adds handleText as a right markable handle (clickable area directly associated with a markable). */    
+    public static String addRightMarkableHandle(String layerName, String markableId, String handleText)    
+    {
+        /** Get reference to markable to which handle is added. */
+        Markable currentMarkable = currentDiscourse.getCurrentMarkableChart().getMarkableLevelByName(layerName,true).getMarkableByID(markableId);
+        int extent = handleText.length();
+        /** Get current document position, i.e. character stream position. */
+        int currentDocumentPosition = currentDiscourse.getCurrentDocumentPosition();
+        currentMarkable.addRightHandlePosition(currentDocumentPosition+extent-1);       
+        for (int temp=0;temp<extent;temp++)
+        {
+            currentDiscourse.markableDisplayAssociation.put(new Integer(currentDocumentPosition+temp),currentMarkable);
+        }
+        return handleText;
+    }    
+    
+    
+    /** Adds a right markable handle (clickable area directly associated with a markable) of size extent, where the actual handle is at position leftHandle relative to extent. */    
+    public static void addLeftMarkableHandle(String layerName, String markableId, int extent, int leftHandle)    
+    {
+        /** Get reference to markable to which handle is added. */
+        Markable currentMarkable = currentDiscourse.getCurrentMarkableChart().getMarkableLevelByName(layerName,true).getMarkableByID(markableId);
+        /** Get current document position, i.e. character stream position. */
+        int currentDocumentPosition = currentDiscourse.getCurrentDocumentPosition();
+        currentMarkable.addLeftHandlePosition(currentDocumentPosition+leftHandle-1);        
+        for (int temp=0;temp<extent;temp++)
+        {
+            currentDiscourse.markableDisplayAssociation.put(new Integer(currentDocumentPosition+temp),currentMarkable);
+        }
+    }    
+    
+    /** Adds a right markable handle (clickable area directly associated with a markable) of size extent, where the actual handle is at position rightHandle relative to extent. */    
+    public static void addRightMarkableHandle(String layerName, String markableId, int extent, int rightHandle)    
+    {
+        /** Get reference to markable to which handle is added. */
+        Markable currentMarkable = currentDiscourse.getCurrentMarkableChart().getMarkableLevelByName(layerName,true).getMarkableByID(markableId);
+        /** Get current document position, i.e. character stream position. */
+        int currentDocumentPosition = currentDiscourse.getCurrentDocumentPosition();
+        currentMarkable.addRightHandlePosition(currentDocumentPosition+rightHandle-1);        
+        for (int temp=0;temp<extent;temp++)
+        {
+            currentDiscourse.markableDisplayAssociation.put(new Integer(currentDocumentPosition+temp),currentMarkable);
+        }
+    }    
+            
+    public static void registerDiscourseElement(String id)
+    {      
+       currentDiscourse.registerDiscourseElement(id);
+    }
+        
+    public static boolean isOn(String switchName)
+    {
+        if (currentDiscourse.getMMAX2() != null)
+        {
+            return currentDiscourse.getMMAX2().isOn(switchName);
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    
+    /** This method has to be called from the XSL style sheet from within the word template, AFTER the call to
+        getStartedMarkables() (if any)! This order is important because markable handles are supposed to
+        begin BEFORE the actual word string. The method's function is mainly to create an association 
+        between the running number of the currently processed <word> element and the position in the 
+        display that this element starts at. <b>Internal use only!</b>*/
+    public static void setDiscourseElementStart()
+    {
+        try
+        {
+            // Get index in document string up to which the document has been transformed already.        
+            // I.E. the DisplayPosition
+            int start = currentDiscourse.getCurrentDocumentPosition();
+            
+            // Add the Display Position as the display start of the current DiscourseElement (i.e. the last one added)             
+            currentDiscourse.temporaryDisplayStartPosition.add(start);
+            
+            // Now, temporaryDisplayStartPosition contains at index X the discPos of the DE starting at display
+            // pos X.
+            if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setDefaultColor();
+        }
+        catch (java.lang.Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        if (currentDiscourse.getHasGUI())  currentDiscourse.getDisplayDocument().flush();
+   }
+    
+       /** This method has to be called from the XSL style sheet from within the word template, BEFORE the call to
+        getEndedMarkables() (if any)! This order is important because markable handles are supposed to
+        end AFTER the actual word string. The method's function is mainly to create an association 
+        between the running number of the currently processed <word> element and the position in the 
+        display that this element ends at. <b>Internal use only!</b>*/
+    public static void setDiscourseElementEnd()
+    {       
+        try
+        {        
+            // Get index in document string up to which the document has been transformed already.
+            int end = currentDiscourse.getCurrentDocumentPosition()-1;
+            // Add the document string index as the display end of the current DiscourseElement (i.e. the last one added) 
+            currentDiscourse.temporaryDisplayEndPosition.add(end);           
+            if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().flush();            
+        }
+        catch (java.lang.Exception ex)
+        {
+            ex.printStackTrace();
+        }
+   }
+               
+    public static void startItalic()
+    {
+       if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setItalic(true);
+    }
+    
+    public static void endItalic()
+    {
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setItalic(false);
+    }
+        
+    public static void startBold()
+    {
+    	//System.err.println("setBold=True");
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setBold(true);
+    }  
+    
+    public static void endBold()
+    {
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setBold(false);
+    }
+
+    public static void startUnderline()
+    {
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setUnderline(true);
+    }    
+    
+    public static void endUnderline()
+    {
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setUnderline(false);
+    }
+    
+    public static void startSubscript()
+    {
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setSubscript(true);
+    }
+    
+    public static void endSubscript()
+    {
+        if (currentDiscourse.getHasGUI())    currentDiscourse.getDisplayDocument().setSubscript(false);
+    }
+    
+    public static void startStrikeThrough()
+    {
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setStrikeThrough(true);
+    }
+    
+    public static void endStrikeThrough()
