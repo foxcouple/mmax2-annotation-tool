@@ -845,3 +845,139 @@ public class MMAX2DiscourseLoader
     }
     
     public static void endStrikeThrough()
+    {
+        if (currentDiscourse.getHasGUI())    currentDiscourse.getDisplayDocument().setStrikeThrough(false);
+    }
+
+    public static void startSuperscript()
+    {
+        if (currentDiscourse.getHasGUI())   currentDiscourse.getDisplayDocument().setSuperscript(true);
+    }
+    
+    public static void endSuperscript()
+    {
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setSuperscript(false);
+    }
+        
+    
+    public static void startColor(String colorName)
+    {      
+        // If no color is explicitly associated with a level, use default foreground color black
+        Color color = MMAX2Utils.getColorByName(colorName);
+        if (color == null) color = Color.black;
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setColor(color, true);
+    }
+    
+    public static void endColor(String colorName)
+    {
+        // If no color is explicitly associated with a level, use default foreground color black
+        Color color = MMAX2Utils.getColorByName(colorName);
+        if (color == null) color = Color.black;
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setColor(color, false);
+    }    
+    
+    
+    public static void startAssociatedColor(String levelname)
+    {
+        // If no color is explicitly associated with a level, use default foreground color black
+        Color color = currentDiscourse.getCurrentMarkableChart().getForegroundColorForLevel(levelname);
+        if (color == null) color = Color.black;
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setColor(color, true);
+    }
+    
+    public static void endAssociatedColor(String levelname)
+    {
+        // If no color is explicitly associated with a level, use default foreground color black
+        Color color = currentDiscourse.getCurrentMarkableChart().getForegroundColorForLevel(levelname);
+        if (color == null) color = Color.black;
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().setColor(color, false);
+    }
+
+    public final static String getFromHash(String key)
+    {
+        return currentDiscourse.getFromHash(key);
+    }
+    
+    public final static void putInHash(String key, String value)
+    {
+        currentDiscourse.putInHash(key, value);
+    }
+        
+
+    public final static boolean inMarkableFromLevel(String DE_ID, String targetLevelName)
+    {
+        return currentDiscourse.getCurrentMarkableChart().inMarkableFromLevel(DE_ID, targetLevelName);
+    }
+
+    
+    public final static boolean inMarkableFromLevel(String markableID, String ownLevelName, String targetLevelName)
+    {
+        return currentDiscourse.getCurrentMarkableChart().inMarkableFromLevel(markableID, ownLevelName, targetLevelName);                
+    }
+    
+    
+    public final static boolean startsMarkableFromLevel(String markableID, String ownLevelName, String targetLevelName)
+    {
+        return currentDiscourse.getCurrentMarkableChart().startsMarkableFromLevel(markableID, ownLevelName, targetLevelName);                
+    }
+
+    public final static boolean finishesMarkableFromLevel(String markableID, String ownLevelName, String targetLevelName)
+    {
+        return currentDiscourse.getCurrentMarkableChart().finishesMarkableFromLevel(markableID, ownLevelName, targetLevelName);                
+    }
+    
+    public final String getCommonStylePath()
+    {
+        return commonStylePath;
+    }
+    
+    public static void flushDocument()
+    {
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getDisplayDocument().flush();
+        if (currentDiscourse.getHasGUI()) currentDiscourse.getCurrentDocumentPosition();
+    }
+    
+    /** This method returns a NodeSet of all Markables from all ACTIVE layers beginning at the DiscourseElement with ID 
+        discourseElementId. If more than one Markable starts at a given DiscourseElement, the Markables returned are sorted 
+        in the following way: Markables from a LOWER MarkableLayer (i.e. higher position) are returned before Markables from
+        a HIGHER MarkableLayer (i.e. one with a lower position). Within the same MarkableLayer, longer Markables are 
+        ordered before shorter ones. This way, MarkableLayers are added on top of each other. */        
+    public final static NodeList getStartedMarkables(String discourseElementId)
+    {
+        return currentDiscourse.getCurrentMarkableChart().getActiveStartedMarkables(discourseElementId);
+    }
+
+    /** This method returns a NodeSet of all Markables from all ACTIVE layers beginning at the DiscourseElement with ID 
+        discourseElementId. If more than one Markable starts at a given DiscourseElement, the Markables returned are sorted 
+        in the following way: Markables from a LOWER MarkableLayer (i.e. higher position) are returned before Markables from
+        a HIGHER MarkableLayer (i.e. one with a lower position). Within the same MarkableLayer, longer Markables are 
+        ordered before shorter ones. This way, MarkableLayers are added on top of each other. */        
+    public final static NodeList getStartedMarkables(String discourseElementId, String levels)
+    {
+        return currentDiscourse.getCurrentMarkableChart().getActiveStartedMarkables(discourseElementId,levels);
+    }
+    
+    
+    public final static NodeSet getEndedMarkables(String discourseElementId)
+    {
+        return currentDiscourse.getCurrentMarkableChart().getActiveEndedMarkables(discourseElementId);
+    }   
+
+    public final static NodeSet getEndedMarkables(String discourseElementId, String levels)
+    {
+        return currentDiscourse.getCurrentMarkableChart().getActiveEndedMarkables(discourseElementId,levels);
+    }   
+    
+    
+    protected void finalize()
+    {        
+        try
+        {
+            super.finalize();
+        }
+        catch (java.lang.Throwable ex)
+        {
+            ex.printStackTrace();
+        }        
+    } 
+}
