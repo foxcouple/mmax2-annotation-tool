@@ -391,3 +391,101 @@ public class MMAX2CaretListener implements CaretListener
                 // The mouse hoovers over a position which does not have a discourse position associated with it
                 // So this is either a Markable handle, or non-clickable display stuff
                 // In the latter case, hooveree will be null, else a valid markable
+                Markable hoveree = mmax2.getCurrentDiscourse().getMarkableAtDisplayAssociation(currentDot);
+                mmax2.getCurrentTextPane().setCurrentHoveree(hoveree, currentDot);  
+            }
+        }
+        
+        else if (updateMode == MMAX2Constants.MOUSE_RELEASED && isSelection == false)
+        {
+            if (ignoreNext)
+            {
+                ignoreNext = false;
+                return;
+            }
+            if (discoursePositionAtCaret == -1)
+            {
+                // The click ocurred either on a MarkableHandle or in empty space
+                // So check if there is at least a MarkableHandle
+                Markable singleMarkable = mmax2.getCurrentDiscourse().getMarkableAtDisplayAssociation(currentDot);
+                if (singleMarkable != null)
+                {
+                    if (currentMouseButton == MMAX2Constants.LEFTMOUSE)
+                    {
+                        // A Markable has been selected by left-clicking its handle
+                        mmax2.getCurrentDiscourse().getCurrentMarkableChart().markableLeftClicked(singleMarkable);
+                    }
+                    else if (currentMouseButton == MMAX2Constants.RIGHTMOUSE)
+                    {
+                        // A Markable has been selected by right-clicking its handle
+                        mmax2.getCurrentDiscourse().getCurrentMarkableChart().markableRightClicked(singleMarkable,currentDot);
+                    }                    
+                }
+                else
+                {
+                    // Nothing has been clicked 
+                    mmax2.getCurrentDiscourse().getCurrentMarkableChart().nothingClicked(currentMouseButton);
+                }
+            }
+            else
+            {
+                // The click ocurred on a valid discourse position, so there may be Markables there 
+                // Try to get _active_ Markables on this discourse position
+                Markable[][] resultSet = (Markable[][]) mmax2.getCurrentDiscourse().getCurrentMarkableChart().getMarkablesAtDiscoursePosition(discoursePositionAtCaret, mmax2.getSelectFromActiveLevelsOnly());
+                MMAX2MarkableSelector selector = new MMAX2MarkableSelector(resultSet, this.mmax2.getCurrentDiscourse(),mmax2.getGroupMarkablesByLevel(),currentMouseButton);
+                if (selector.getItemCount()>1)
+                {
+                    // More than one Markable has been found at discoursePositionAtCaret, so show MarkableSelector
+                    int xPos = mmax2.getCurrentTextPane().getCurrentMouseMoveEvent().getX();
+                    int yPos = mmax2.getCurrentTextPane().getCurrentMouseMoveEvent().getY();
+                    int currentScreenWidth = mmax2.getScreenWidth();
+                    int selectorWidth = selector.getWidth();
+                    if ((xPos+mmax2.getX()) > currentScreenWidth/2)
+                    {
+                        xPos = xPos-selectorWidth;
+                    }
+                    selector.show(mmax2.getCurrentTextPane(),xPos,yPos );
+                }
+                else if (selector.getItemCount() == 1)
+                {
+                    // There is only one Markable at discoursePositionAtCaret, so select directly 
+                    if (currentMouseButton == MMAX2Constants.LEFTMOUSE)
+                    {                    
+                        mmax2.getCurrentDiscourse().getCurrentMarkableChart().markableLeftClicked(selector.getOnlyMarkable());
+                    }
+                    else if (currentMouseButton == MMAX2Constants.RIGHTMOUSE)
+                    {                    
+                        mmax2.getCurrentDiscourse().getCurrentMarkableChart().markableRightClicked(selector.getOnlyMarkable(),-1);
+                    }
+                }
+                else
+                {
+                    // Selector was empty, so nothing has been clicked 
+                    mmax2.getCurrentDiscourse().getCurrentMarkableChart().nothingClicked(-1);                    
+                }
+            selector = null;
+            }
+        }
+        else
+        {
+            isSelection = false;
+        }
+    } // end caretUpdate
+    
+    
+    /** Called by MMAX2TextPane.setMMAX2(MMAX2 _mmax2) ! */
+    protected final void setMMAX2(MMAX2 _mmax2)
+    {
+        mmax2 = _mmax2;
+    }
+    
+    protected final void setUpdateMode(int mode)
+    {
+        updateMode = mode;
+    }
+    
+    protected final void setMouseButton(int button)
+    {
+        currentMouseButton = button;
+    }            
+}// end class
