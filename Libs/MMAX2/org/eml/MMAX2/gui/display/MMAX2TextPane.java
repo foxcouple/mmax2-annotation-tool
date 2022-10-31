@@ -318,3 +318,201 @@ public class MMAX2TextPane extends JTextPane implements AdjustmentListener, KeyL
             else 									{ mmax2.setStatusBar("Press 'i' to inspect attributes"); }
             // This will obey the suppress... setting 
             activateMarkableHandleHighlight();
+//            if (mmax2.getRenderingListSize() != 0)
+//            {
+//                activateMarkableSetPeerWindow();
+//            }
+//            activateFloatingAttributeWindow();            
+        }        
+    }
+
+    private final void deactivateMarkableSetPeerWindow()
+    {
+        if (markableSetPeerWindow != null)
+        {
+            markableSetPeerWindow.setVisible(false);
+            markableSetPeerWindow = null;
+        }
+    }
+
+    private final void activateMarkableSetPeerWindow()
+    {
+        if (mmax2.getShowMarkableSetPeerWindow()==false) return;
+        JMenuItem item = null;
+        MarkableSet current = (MarkableSet)mmax2.getCurrentlyRenderedMarkableRelationContaining(currentHoveree);
+        if (current != null)
+        {
+            ArrayList content =  (ArrayList)java.util.Arrays.asList(current.getOrderedMarkables());
+            markableSetPeerWindow = new JPopupMenu();
+            for (int z=0;z<content.size();z++)
+            {
+                if (((Markable)content.get(z))!= currentHoveree)
+                {
+                    item = new JMenuItem(((Markable)content.get(z)).toString());
+                }
+                else
+                {
+                    item = new JMenuItem("--> "+((Markable)content.get(z)).toString());
+                }
+                item.setFont(MMAX2.getStandardFont().deriveFont(8));
+                markableSetPeerWindow.add(item);
+                item = null;
+            }
+            markableSetPeerWindow.show(this,currentMouseMoveEvent.getX(),currentMouseMoveEvent.getY());
+        }
+    }
+    private final void activateMarkableHandleHighlight()
+    {
+        if (mmax2.getHighlightMatchingHandles() && mouseInPane && (mmax2.getIsRendering()==false || mmax2.getSuppressHandlesWhenRendering()==false))
+        {
+//        	System.err.println("activating");
+            if (showHandlesOfCurrentFragmentOnly)
+            {
+                currentHoveree.renderMe(MMAX2Constants.RENDER_CURRENT_HANDLE);
+            }
+            else
+            {
+                currentHoveree.renderMe(MMAX2Constants.RENDER_ALL_HANDLES);
+            }
+        }
+    }
+    
+    public final void deactivateMarkableHandleHighlight(boolean force)
+    {
+        if (mmax2.getHighlightMatchingHandles() && (mmax2.getIsRendering()==false || force || mmax2.getSuppressHandlesWhenRendering()==false))
+        {
+//        	System.err.println("deactivating");
+            if (currentHoveree!=null)
+            {
+                currentHoveree.renderMe(MMAX2Constants.RENDER_NO_HANDLES);
+                mmax2.redraw(null);
+            }
+        }
+    }
+    
+
+    /** This method is triggered automatically by activateHoveringLatencyTimer. */
+    private final void startHovering()
+    {
+//    	System.err.println("Hovering");
+        /** Set CaretListener in hovering mode */
+        currentCaretListener.setUpdateMode(MMAX2Constants.MOUSE_HOVERED);
+        /** Create positionCaretEvent using the last stored Mouse Event. */
+        ((MMAX2Caret)this.getCaret()).positionCaret(currentMouseMoveEvent);
+        activateHoveringLatencyTimer.stop();
+    }
+    
+    /** Called from MMAX2MouseMotionListener upon MouseMotion detection. */
+    protected final Timer getHoveringLatencyTimer()
+    {
+        return activateHoveringLatencyTimer;
+    }
+    
+    public final void setShowFloatingAttributeWindow(boolean status)
+    {
+        showFloatingAttributeWindow = status;
+    }
+    
+    public final void setShowHandlesOfCurrentFragmentOnly(boolean status)
+    {
+        showHandlesOfCurrentFragmentOnly = status;
+    }
+    
+    /** This method starts/restarts the refreshTimer and the refreshControlTimer. It is called automatically upon each 
+        adjustmentValueChanged event on */
+    public final void startAutoRefresh()
+    {
+//    	System.err.println("startAutoRefresh");
+
+    	if (refreshTimer.isRunning())  	{ refreshTimer.restart(); } 
+        else 							{ refreshTimer.start();}           
+        if (refreshControlTimer.isRunning())  	{ refreshControlTimer.restart(); }
+        else 									{ refreshControlTimer.start(); }                        
+    }
+        
+    public final void stopAutoRefresh()
+    {
+        refreshTimer.stop();
+        refreshControlTimer.stop();
+    }
+        
+    // Overridden to implement custom painting
+    public final void paintComponent(Graphics gr)
+    {
+//    	System.err.println("painting");
+//        try
+//        {
+//            mmax2.redraw(null);            
+//        }
+//        catch (java.lang.NullPointerException ex)
+//        {
+//            //
+//        }
+        
+        
+        try
+        {
+            super.paintComponent(gr);
+        }
+        catch (java.lang.ArrayIndexOutOfBoundsException ex)
+        {
+
+        }
+        catch (java.lang.NullPointerException ex)
+        {
+
+        }
+        
+//        try
+//        {
+//            mmax2.redraw(null);            
+//        }
+//        catch (java.lang.NullPointerException ex)
+//        {
+//            //
+//        }
+    }                        
+                       
+    public final MMAX2MouseMotionListener getCurrentMouseMotionListener()
+    {
+        return this.currentMouseMotionListener;
+    }
+    
+    // Called when display is scrolled or resized
+    public void adjustmentValueChanged(java.awt.event.AdjustmentEvent p1) 
+    {            
+        // Get origin of this adjustment event
+        JScrollBar adjustable = (JScrollBar) p1.getAdjustable();
+        if (adjustable.getOrientation()==JScrollBar.HORIZONTAL)
+        {
+            // If this event was caused by a horizontal resize, the linePoints of MarkableSets currently rendered 
+            // must be recalculated
+            try
+            {
+                mmax2.updateRenderingListObjects();
+            }
+            catch (java.lang.NullPointerException ex)
+            {
+                //
+            }
+        }
+        
+        // Start automatic display refresh
+        startAutoRefresh();
+        try
+        {
+            // Put currently visble Viewport in current RepaintManager's dirty list, thus scheduling it for (real) repaint
+            mmax2.getCurrentViewport().repaint();
+        }
+        catch (java.lang.NullPointerException ex)
+        {
+            //
+        }        
+        
+    }                        
+    
+    public void setControlIsPressed(boolean state)
+    {    
+        CONTROL_DOWN=state;
+        if (state == true)
+        {
