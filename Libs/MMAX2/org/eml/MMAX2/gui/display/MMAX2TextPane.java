@@ -115,3 +115,206 @@ public class MMAX2TextPane extends JTextPane implements AdjustmentListener, KeyL
         refreshControlTimer.setInitialDelay(TIME_TO_REFRESH_AFTER_LAST_SCROLLING);
             
         refreshTimer = new Timer(TIME_BETWEEN_REFRESHES, new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ae)
+            {
+                try
+                {
+                	// System.err.println("Timer actionPerformed "+System.currentTimeMillis());                	
+                    mmax2.redraw(null);
+                }
+                catch (java.lang.NullPointerException ex)
+                {
+                    //
+                }                
+            }                
+        });
+        refreshTimer.setCoalesce(true);
+        refreshTimer.setInitialDelay(0);
+        // Make refreshTimer fire several times
+        refreshTimer.setRepeats(true);       
+        this.activateHoveringLatencyTimer = new Timer(0, new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ae)
+            {
+                startHovering();
+            }                                        
+        });                
+        activateHoveringLatencyTimer.setInitialDelay(HOVERING_LATENCY_TIME);
+    
+        addKeyListener(this);  
+               
+    }// end constructor
+    
+    
+    public final boolean isHovering()
+    {    	
+    	if (currentCaretListener.getUpdateMode()==MMAX2Constants.MOUSE_HOVERED)
+    		return true;
+    	else {
+    		return false;    		
+    	}
+    }
+    
+    public final void setIsDraggingGoingOn(boolean status)
+    {
+        isDraggingGoingOn = status;
+    }
+    public final boolean getIsDraggingGoingOn()
+    {
+        return isDraggingGoingOn;
+    }
+    
+    public final boolean getIsControlDown()
+    {
+        return CONTROL_DOWN;
+    }
+    
+    public boolean print()
+    {                
+        DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();       
+        
+        // Create an instance of org.w3c.dom.Document
+        Document document = domImpl.createDocument(null, "svg", null);
+
+        SVGGeneratorContext context = SVGGeneratorContext.createDefault(document);
+        context.setEmbeddedFontsOn(true);
+        // Create an instance of the SVGGenerator using the document
+        SVGGraphics2D svgGenerator = new SVGGraphics2D(context,true);       
+        // Cause this component to render itself in svgGenerator        
+        paint(svgGenerator);
+        // Cause mmax2 to redraw lines in svgGenerator
+        mmax2.redraw(svgGenerator);               
+              
+        //BufferedWriter writer = null;
+        Writer out = null;
+        try { out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("image.svg"),"UTF-8")); }
+        catch (java.io.IOException ex) { ex.printStackTrace(); }
+        
+        try { svgGenerator.stream(out, false);}
+        catch (org.apache.batik.svggen.SVGGraphics2DIOException ex) { }                 
+        try
+        {
+            out.flush();
+            out.close();
+        }
+        catch (java.io.IOException ex) { }       
+        return true;
+    }
+    
+    public final void setMouseInPane(boolean in)
+    {
+        mouseInPane = in;
+    }
+                
+    protected final MMAX2CaretListener getCurrentCaretListener()
+    {
+        return currentCaretListener;
+    }
+    
+    protected final void setCurrentMouseMoveEvent(MouseEvent _me)
+    {
+        currentMouseMoveEvent = _me;
+    }
+    
+    public final MouseEvent getCurrentMouseMoveEvent()
+    {
+        return currentMouseMoveEvent;
+    }
+    
+    public final void setMMAX2(MMAX2 _mmax2)
+    {
+        mmax2 = _mmax2;
+        currentCaretListener.setMMAX2(_mmax2);
+        currentMouseListener.setMMAX2(_mmax2);
+        currentMouseMotionListener.setMMAX2(_mmax2);
+        
+    	setFont(new Font(mmax2.currentDisplayFontName, Font.PLAIN, mmax2.currentDisplayFontSize));
+    }
+
+    public final void deactivateFloatingAttributeWindow()
+    {
+        if (floatingAttributeWindow != null)
+        {
+            floatingAttributeWindow.setVisible(false);
+            mmax2.redraw(null);
+        }
+        floatingAttributeWindow = null;
+    }
+    
+    protected final void activateFloatingAttributeWindow()
+    {
+        floatingAttributeWindow = new JPopupMenu();
+        floatingAttributeWindow.setEnabled(false);
+        JMenuItem item = null;
+           
+        if (currentHoveree != null)
+        {            
+            if (showFloatingAttributeWindow)
+            {
+                Markable markable = getCurrentHoveree();
+                item = new JMenuItem("ID"+" : "+markable.getID());
+                item.setFont(MMAX2.getStandardFont());
+                floatingAttributeWindow.add(item);
+                item = null;
+                
+                floatingAttributeWindow.addSeparator();
+                HashMap atts = markable.getAttributes();
+                Iterator enum2 = atts.keySet().iterator();
+                while (enum2.hasNext())
+                {
+                    String att = (String) enum2.next();
+                    String val = (String) atts.get(att);
+                    item = new JMenuItem(att+" : "+val);
+                    item.setFont(MMAX2.getStandardFont());
+                    floatingAttributeWindow.add(item);
+                    item = null;                    
+                }                
+                floatingAttributeWindow.show(this,this.currentMouseMoveEvent.getX(), this.currentMouseMoveEvent.getY());
+            }
+        }
+    }
+
+    public final Markable getCurrentHoveree()
+    {
+        return currentHoveree;       
+    }
+    
+    
+    public final int getCurrentDot()
+    {
+        return currentDot;
+    }
+    
+    /** This method is called when the hovering Markable changes. */
+    public final void setCurrentHoveree(Markable _hoveree, int _currentDot)
+    {
+        // Save dot position (needed for discontinuous markables) 
+        currentDot = _currentDot;        
+                
+        if (_hoveree == null)
+        {
+            // The method was called with a null Markable, so any hoovering-related stuff has to be removed.
+            if (currentHoveree == null)
+            {
+                // There was not any hovering going on, so nothing to do                
+                return;
+            }
+            else
+            {
+                // There was some hovering going on, so reset first, but do not force it
+                deactivateMarkableHandleHighlight(false);
+//                deactivateMarkableSetPeerWindow();
+                // Then set currentHoveree to null. This indicates that no hovering is currently going on
+                currentHoveree = null;
+            }
+//            deactivateMarkableSetPeerWindow();                           
+        }
+        else
+        {
+            // The method was called with a valid hoveree markable
+            currentHoveree = _hoveree;
+            if (currentHoveree.isDiscontinuous()) 	{ mmax2.setStatusBar("Press 'i' to inspect attributes, 'f' to highlight current fragment only");  }
+            else 									{ mmax2.setStatusBar("Press 'i' to inspect attributes"); }
+            // This will obey the suppress... setting 
+            activateMarkableHandleHighlight();
