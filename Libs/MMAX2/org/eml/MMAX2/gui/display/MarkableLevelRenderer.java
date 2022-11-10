@@ -131,3 +131,195 @@ public class MarkableLevelRenderer
             if (customizationFileName.equals("")==false)
             {
                 customizations = null;
+                customizations = new SimpleMarkableCustomization[0];            
+                DOMParser parser = new DOMParser();            
+                Document customizationDOM = null;            
+                try
+                {
+                    parser.setFeature("http://xml.org/sax/features/validation",false);
+                }
+                catch (org.xml.sax.SAXNotRecognizedException ex)
+                {
+                    ex.printStackTrace();            
+                    return;
+                }
+                catch (org.xml.sax.SAXNotSupportedException ex)
+                {
+                    ex.printStackTrace();
+                    return;
+                }
+
+                try
+                {
+                    //parser.parse(new InputSource("FILE:"+customizationFileName));
+                    parser.parse(new InputSource(new File(customizationFileName).toURI().toString()));
+                }
+                catch (org.xml.sax.SAXParseException exception)
+                {
+                    String error = "Line: "+exception.getLineNumber()+" Column: "+exception.getColumnNumber()+"\n"+exception.toString();            
+                    JOptionPane.showMessageDialog(null,error,"MarkableFileLoader: "+customizationFileName,JOptionPane.ERROR_MESSAGE);
+                }                
+                catch (org.xml.sax.SAXException exception)
+                {
+                    String error = exception.toString();
+                    JOptionPane.showMessageDialog(null,error,"MarkableFileLoader: "+customizationFileName,JOptionPane.ERROR_MESSAGE);
+                }
+                catch (java.io.IOException exception)
+                {
+                    String error = exception.toString();
+                    JOptionPane.showMessageDialog(null,error,"MarkableFileLoader: "+customizationFileName,JOptionPane.ERROR_MESSAGE);
+                }
+
+                customizationDOM =parser.getDocument();
+                NodeList allRules = customizationDOM.getElementsByTagName("rule");
+
+                int custNum = allRules.getLength();
+                customizations = new SimpleMarkableCustomization[custNum];
+
+                for (int p=0;p<custNum;p++)
+                {
+                    String pattern = "";
+                    String style="";
+                    String connector = "";
+                    try
+                    {
+                        pattern =allRules.item(p).getAttributes().getNamedItem("pattern").getNodeValue();
+                    }
+                    catch (java.lang.NullPointerException ex)
+                    {
+                     // 
+                    }
+                    try
+                    {
+                        style =allRules.item(p).getAttributes().getNamedItem("style").getNodeValue();
+                    }
+                    catch (java.lang.NullPointerException ex)
+                    {
+                        // 
+                    }
+                    try
+                    {
+                        connector =allRules.item(p).getAttributes().getNamedItem("connector").getNodeValue();
+                    }
+                    catch (java.lang.NullPointerException ex)
+                    {
+                        connector = "and";
+                    }
+                    int numConnector = MMAX2Constants.AND;
+                    if (connector.equalsIgnoreCase("or"))numConnector = MMAX2Constants.OR;
+                    customizations[p] = new SimpleMarkableCustomization(level, pattern,numConnector,MMAX2Utils.createSimpleAttributeSet(style,false));                
+                } // for p
+            }// if not ""                        
+            customizationCount = customizations.length;         
+        }
+    }
+    
+    public final Color getHandleColor()
+    {
+        return StyleConstants.getBackground(defaultActiveHandleStyle);
+    }
+    
+    public final void render(Markable markable, int mode)
+    {
+        SimpleAttributeSet styleToUse = null;
+        
+        // Get references to document, textpane and markable chart once 
+        MMAX2Document doc = level.getCurrentDiscourse().getDisplayDocument();
+        MMAX2TextPane pane = level.getCurrentDiscourse().getMMAX2().getCurrentTextPane();
+        MarkableChart chart = level.getCurrentDiscourse().getCurrentMarkableChart();
+
+        int[] displayStartPositions = null;
+        int[] displayEndPositions = null;
+        String[][] fragments = null;
+        
+        if (markable != null)
+        {
+            // Get each fragment and its resp. display start and end position
+            displayStartPositions = markable.getDisplayStartPositions();
+            displayEndPositions = markable.getDisplayEndPositions();
+            fragments = markable.getFragments(); // ok
+        }
+        // The current markable was deleted
+        if (mode == MMAX2Constants.RENDER_REMOVED)
+        {
+            String[] currentFrag = null;
+            doc.startChanges(markable);
+            // Get array of fragments
+            fragments = markable.getFragments();
+            // Iterate over all fragments
+            for (int z=0;z<fragments.length;z++)
+            {
+                // Get current fragment
+                currentFrag = fragments[z];
+                int discPos =0;
+                // Iterate over current fragment
+                for (int r=0;r<currentFrag.length;r++)
+                {                    
+                    // Get attributes to be displayed in this position.
+                    // Since the markable has been removed already, it will not yield any attributes, 
+                    // and thus will not show up any more.                     
+                    styleToUse=chart.getTopAttributesAtDiscourseElement(currentFrag[r]);
+                    discPos = level.getCurrentDiscourse().getDiscoursePositionFromDiscourseElementID(currentFrag[r]);
+                    doc.bulkApplyStyleToDiscourseElement(level.getCurrentDiscourse().getDisplayStartPositionFromDiscoursePosition(discPos),styleToUse,true);
+                }
+            }
+            doc.commitChanges();
+        }
+        else if (mode == MMAX2Constants.RENDER_IN_SET)
+        {
+            // Modified for discont: 30.01.05
+            // First, reapply currently valid attributes
+            // This will enforce any customization-dependent attribute changes, including size and font
+            markable.renderMe(MMAX2Constants.RERENDER_THIS);            
+            
+            // Then, add set-related selection attributes on top
+            styleToUse = getAttributesForMarkable(markable);
+            
+            if (styleToUse.isDefined(StyleConstants.FontSize)==false)
+            {
+                // If no attribute-dependent size exists, use current display size
+                StyleConstants.setFontSize(styleToUse,MMAX2.currentDisplayFontSize);
+            }
+            if (styleToUse.isDefined(StyleConstants.FontFamily)==false)
+            {
+                // If no attribute-dependent size exists, use current display size
+                StyleConstants.setFontFamily(styleToUse,MMAX2.currentDisplayFontName);
+            }
+            
+            StyleConstants.setBackground(styleToUse,Color.lightGray);
+            
+            // Iterate over all fragments of currentmarkable
+            for (int b=0;b<displayStartPositions.length;b++)
+            {
+                doc.bulkApplyStyleToDisplaySpanBackground(displayStartPositions[b],displayEndPositions[b]-displayStartPositions[b]+1, styleToUse);
+            }
+        }
+        else if (mode == MMAX2Constants.RENDER_IN_SEARCHRESULT)
+        {
+            // Modified for discont: 30.01.05
+            doc.startChanges(markable);
+
+            styleToUse = getAttributesForMarkable(markable);
+            if (styleToUse.isDefined(StyleConstants.FontSize)==false)
+            {
+                // If no attribute-dependent size exists, use current display size
+                StyleConstants.setFontSize(styleToUse,MMAX2.currentDisplayFontSize);
+            }
+            if (styleToUse.isDefined(StyleConstants.FontFamily)==false)
+            {
+                // If no attribute-dependent size exists, use current display size
+                StyleConstants.setFontFamily(styleToUse,MMAX2.currentDisplayFontName);
+            }
+            
+            StyleConstants.setBackground(styleToUse,Color.orange);
+            
+            // Iterate over all fragments of currentmarkable
+            for (int b=0;b<displayStartPositions.length;b++)
+            {            
+                doc.bulkApplyStyleToDisplaySpanBackground(displayStartPositions[b],displayEndPositions[b]-displayStartPositions[b]+1, styleToUse);
+            }
+            doc.commitChanges();
+        }
+        else if (mode == MMAX2Constants.RERENDER_THIS)
+        {
+            // No mod for discont necessary
