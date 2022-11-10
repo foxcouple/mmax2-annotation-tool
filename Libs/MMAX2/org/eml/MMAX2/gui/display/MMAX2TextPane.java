@@ -516,3 +516,81 @@ public class MMAX2TextPane extends JTextPane implements AdjustmentListener, KeyL
         CONTROL_DOWN=state;
         if (state == true)
         {
+            if (mmax2.getIsBasedataEditingEnabled())
+            {
+                mmax2.setStatusBar("CONTROL");
+                setCursor(new Cursor(Cursor.TEXT_CURSOR));
+            }
+            else
+            {
+                mmax2.setStatusBar("Base data editing is disabled!");
+            }
+        }
+        else
+        {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            mmax2.clearStatusBar();
+        }
+    }
+    
+        
+    public void keyPressed(KeyEvent e) 
+    {    	    	
+        int code = e.getKeyCode();       
+        if (code == KeyEvent.VK_CONTROL)
+        {        	        	
+        	System.err.println("Control down");
+            setControlIsPressed(true);                        
+        }
+    	if (e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK)
+    	{
+            if (e.getKeyCode() == KeyEvent.VK_X)
+            {
+            	mmax2.requestExit();
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_S)
+            {
+            	setControlIsPressed(false);
+            	mmax2.requestSaveAll();            	
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_L)
+            {
+            	setControlIsPressed(false);
+            	mmax2.requestLoadFile();
+            }           
+    	}        
+    }    
+    
+    public void keyReleased(KeyEvent e) 
+    {
+        int code = e.getKeyCode();       
+        if (code == KeyEvent.VK_CONTROL)
+        {
+        	System.err.println("Control up");
+            setControlIsPressed(false);
+        }                        
+    }
+    
+    public void keyTyped(KeyEvent e) 
+    {
+    	
+    }
+        
+    class ComponentPrintable implements Printable 
+    {
+    	private MMAX2TextPane mComponent;
+
+    	public ComponentPrintable(MMAX2TextPane p) 
+    	{
+    		mComponent = p;
+    	}
+    
+    	public int print(Graphics g, PageFormat pageFormat, int pageIndex) 
+    	{
+    		if (pageIndex > 0) return NO_SUCH_PAGE;        
+    		g.translate((int)pageFormat.getImageableX(), (int)pageFormat.getImageableY());
+    		mComponent.paintComponent(g);
+    		return PAGE_EXISTS;
+    	}
+    }        
+}
