@@ -323,3 +323,207 @@ public class MarkableLevelRenderer
         else if (mode == MMAX2Constants.RERENDER_THIS)
         {
             // No mod for discont necessary
+            String[] currentFragment = null;
+            String currentDE = "";
+            int currentStart = 0;
+            for (int z=0;z<fragments.length;z++)
+            {
+                // Get current fragment
+                currentFragment = fragments[z];
+                // Iterate over each element in current fragment
+                for (int p=0;p<currentFragment.length;p++)
+                {
+                    currentDE = currentFragment[p]; //                    
+                    // New: This will add current font size as default
+                    styleToUse=chart.getTopAttributesAtDiscourseElement(currentDE);
+                    
+                    currentStart = level.getCurrentDiscourse().getDisplayStartPositionFromDiscoursePosition(level.getCurrentDiscourse().getDiscoursePositionFromDiscourseElementID(currentDE));
+                    doc.bulkApplyStyleToDiscourseElement(currentStart,styleToUse,true);
+                }// for each element in fragment
+            }// for each fragment                
+        }
+        else if (mode == MMAX2Constants.RERENDER_EVERYTHING)
+        {
+            // No mod for discont necessary
+            // The entire display is to be rerendered, e.g. as the result of a change in the layer hierarchy
+            // Get ordered array of all Discourse Elements' IDs
+            String[] allDiscourseElements = level.getCurrentDiscourse().getAllDiscourseElementIDs();            
+            doc.startChanges(0,doc.getLength());
+            // Iterate over all DiscourseElements
+            for (int z=0;z<allDiscourseElements.length;z++)
+            {
+                // Get start position of DE at discourse position z. This is the first letter of the DE, 
+                // and suffices to retrieve the run in the document later
+                int currentStart = level.getCurrentDiscourse().getDisplayStartPositionFromDiscoursePosition(z);
+                // New May 21st: This will add current font size and name as default
+                SimpleAttributeSet attribs = chart.getTopAttributesAtDiscourseElement(allDiscourseElements[z]);               
+                
+                doc.bulkApplyStyleToDiscourseElement(currentStart,attribs,true);
+            }           
+
+            // Array of all displayassociations (i.e. things underlying handles)
+            Integer[] allHandlePositions = level.getCurrentDiscourse().getAllDisplayAssociations();
+            Markable tempM = null;
+            SimpleAttributeSet handleStyle = null;
+            SimpleAttributeSet markableAttributes = null;
+            if (allHandlePositions != null)
+            {
+                // Update handles only if any exist
+                // Iterate over all handles
+                for (int q=0;q<allHandlePositions.length;q++)
+                {                    
+                    // Create new style to use for handle
+                    handleStyle = new SimpleAttributeSet();
+                    // Get current associates markable
+                    tempM = (Markable) level.getCurrentDiscourse().getMarkableAtDisplayAssociation(((Integer)allHandlePositions[q]).intValue());                    
+                    // Get attribute dependent style for current markable
+                    markableAttributes = tempM.getAttributedependentStyle();
+                    System.err.println(markableAttributes);
+                    // Get attribute-dependent color from associated markable, if any is defined
+                    if (markableAttributes.isDefined("handles"))
+                    {
+                        StyleConstants.setForeground(handleStyle, (Color) markableAttributes.getAttribute("handles"));
+                    }
+                    else                        
+                    {
+                        // Use black as default
+                        StyleConstants.setForeground(handleStyle,Color.BLACK);
+                    }
+                    
+                    if (markableAttributes.isDefined(StyleConstants.FontSize))
+                    {
+                        StyleConstants.setFontSize(handleStyle, StyleConstants.getFontSize(markableAttributes));
+                    }
+                    else                        
+                    {
+                        StyleConstants.setFontSize(handleStyle, MMAX2.currentDisplayFontSize);
+                    }
+                    if (markableAttributes.isDefined(StyleConstants.FontFamily))
+                    {
+                        StyleConstants.setFontFamily(handleStyle, StyleConstants.getFontFamily(markableAttributes));
+                    }
+                    else                        
+                    {
+                        StyleConstants.setFontFamily(handleStyle, MMAX2.currentDisplayFontName);
+                    }
+                    
+                    int[] currentHandles = tempM.getRightHandlePositions();                    
+                    if (currentHandles != null)
+                    {
+                        for (int u=0;u<currentHandles.length;u++)
+                        {
+                            doc.bulkApplyStyleToMarkableHandle(currentHandles[u],handleStyle,false);                            
+                        }
+                    }
+                    currentHandles = tempM.getLeftHandlePositions();                    
+                    if (currentHandles != null)
+                    {
+                        for (int u=0;u<currentHandles.length;u++)
+                        {
+                            doc.bulkApplyStyleToMarkableHandle(currentHandles[u],handleStyle,false);                            
+                        }
+                    }                    
+                }
+            }
+            doc.commitChanges();
+        }
+        
+        else if (mode==MMAX2Constants.RENDER_SELECTED) // checked
+        {               
+            // modified for discont: 30.01.05
+            doc.startChanges(markable);
+            // First simply reapply currently valid attributes
+            markable.renderMe(MMAX2Constants.RERENDER_THIS);            
+            
+            // Get style for selection (normally: backgroundcolor)            
+            styleToUse = new SimpleAttributeSet(level.getCurrentDiscourse().getMMAX2().getSelectedStyle());
+            
+            // Iterate over all fragments of currentmarkable
+            for (int b=0;b<displayStartPositions.length;b++)
+            {
+                // Apply style for selection to entire display from first to last character in fragment, incl. spaces
+                doc.bulkApplyStyleToDisplaySpanBackground(displayStartPositions[b],displayEndPositions[b]-displayStartPositions[b]+1, styleToUse);
+            }
+            doc.commitChanges();            
+            
+            // Get all MarkableSetRelations for current markable
+            MarkableRelation[] thisMarkablesMarkableSetRelations = this.level.getActiveMarkableSetRelationsForMarkable(markable);
+            if (thisMarkablesMarkableSetRelations != null)
+            {
+                // The current Markable is in at least one MarkableSet relation
+                // Iterate over all MarkableSetRelations for current Markable
+                for (int e=0;e<thisMarkablesMarkableSetRelations.length;e++)
+                {
+                    MarkableRelation currentRelation = (MarkableRelation) thisMarkablesMarkableSetRelations[e];
+                    String currentAttributeName = currentRelation.getAttributeName();
+                    level.getCurrentDiscourse().getMMAX2().putOnRenderingList((Renderable)currentRelation.getMarkableSetWithAttributeValue(markable.getAttributeValue(currentAttributeName)));
+                }
+            }
+
+            // Get all MarkablePointerRelations for current markable            
+            MarkableRelation[] thisMarkablesMarkablePointerRelations = level.getActiveMarkablePointerRelationsForSourceMarkable(markable);
+            if (thisMarkablesMarkablePointerRelations != null)
+            {
+                // The current Markable is the source of a markable pointer relation
+                // Iterate over all MarkablePointerRelations for current Markable
+                // Note: This considers only those relations that are activated by the current markable
+                // being selected. They do not consider other, *permanently* displayed pointers.
+                int flagLevel =0;
+                for (int e=0;e<thisMarkablesMarkablePointerRelations.length;e++)
+                {
+                    // Get relation that models the current pointer relation
+                    MarkableRelation currentRelation = (MarkableRelation) thisMarkablesMarkablePointerRelations[e];
+                    // Get set to display
+                    Renderable currentRenderable = currentRelation.getMarkablePointerForSourceMarkable(markable);
+                    // Set flagLevel in relation to all relations caused by current attribute being selected
+                    currentRenderable.setFlagLevel(flagLevel);
+                    // Increase flaglevel for as many levels as just added renderable has elements
+                    flagLevel += ((MarkablePointer)currentRenderable).getSize();
+                    level.getCurrentDiscourse().getMMAX2().putOnRenderingList((Renderable)currentRenderable);
+                }
+            }                        
+        }
+        else if (mode==MMAX2Constants.RENDER_UNSELECTED) // checked
+        {
+            // Mod for discont: 30.01.05
+            // A selection is to be removed from markable
+            // Just apply normal unselected, but potentially customized attribs
+            // Problem: spaces between DiscourseElements remain highlighted, 
+            // so first set everything to Color.white ...
+            
+        	doc.startChanges(markable); // added July 18, 2008
+        	
+            styleToUse = getAttributesForMarkable(markable);
+            if (styleToUse.isDefined(StyleConstants.FontSize)==false)
+            {
+                // If no attribute-dependent size exists, use current display size
+                StyleConstants.setFontSize(styleToUse,MMAX2.currentDisplayFontSize);
+            }
+                        
+            StyleConstants.setBackground(styleToUse,Color.white);            
+            StyleConstants.setFontFamily(styleToUse, level.getCurrentDiscourse().getMMAX2().currentDisplayFontName);
+            // Iterate over all fragments of currentmarkable
+            for (int b=0;b<displayStartPositions.length;b++)
+            {            
+                doc.bulkApplyStyleToDisplaySpanBackground(displayStartPositions[b],displayEndPositions[b]-displayStartPositions[b]+1, styleToUse);
+            }
+            
+            // Then simply reapply currently valid attributes
+            markable.renderMe(MMAX2Constants.RERENDER_THIS);    
+            
+            doc.commitChanges(); // added July 18, 2008
+            
+        }        
+        else if (mode==MMAX2Constants.RENDER_ALL_HANDLES)
+        {                        
+            // We want to highlight the handles of all fragments
+            // Use the defaultStyle for MarkableHandle rendering
+            styleToUse = defaultActiveHandleStyle;
+            StyleConstants.setFontFamily(styleToUse, level.getCurrentDiscourse().getMMAX2().currentDisplayFontName);
+            
+            // Get start and end for each handle for current markable
+            int[] startHandles = markable.getLeftHandlePositions();
+            int[] endHandles = markable.getRightHandlePositions();                
+            
+            /** Iterate over all fragments of current Markable */
+            for (int z=0;z<startHandles.length;z++)
