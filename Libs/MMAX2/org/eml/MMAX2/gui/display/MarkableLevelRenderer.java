@@ -527,3 +527,198 @@ public class MarkableLevelRenderer
             
             /** Iterate over all fragments of current Markable */
             for (int z=0;z<startHandles.length;z++)
+            {
+                // Set attributes so that handles are highlighted 
+                doc.setCharacterAttributes(startHandles[z],1,styleToUse,false);
+                doc.setCharacterAttributes(endHandles[z],1,styleToUse,false);
+            }// for all fragments of current Markable
+            
+        }        
+        else if (mode==MMAX2Constants.RENDER_NO_HANDLES) // Checked
+        {
+            // We want to hide the handles of all fragments
+            // Create new (empty) style, we want to reset colors only, therefore use false in setCharacterAttributes
+            styleToUse = new SimpleAttributeSet();            
+
+            StyleConstants.setFontFamily(styleToUse, level.getCurrentDiscourse().getMMAX2().currentDisplayFontName);
+            
+            int[] startHandles = markable.getLeftHandlePositions();
+            int[] endHandles = markable.getRightHandlePositions();            
+                                    
+            /** Iterate over all fragments in current markable */
+            for (int z=0;z<startHandles.length;z++)
+            {                
+                StyleConstants.setBackground(styleToUse,level.getCurrentDiscourse().getCurrentMarkableChart().getPrevailingBackgroundColorForMarkableHandle(startHandles[z]));
+                // Display modification are few, so do it non-bulk
+                doc.setCharacterAttributes(startHandles[z],1,styleToUse,false);                
+                StyleConstants.setBackground(styleToUse,level.getCurrentDiscourse().getCurrentMarkableChart().getPrevailingBackgroundColorForMarkableHandle(endHandles[z]));
+                // Display modification are few, so do it non-bulk
+                doc.setCharacterAttributes(endHandles[z],1,styleToUse,false);
+            }                            
+        }        
+        else if (mode==MMAX2Constants.RENDER_CURRENT_HANDLE)
+        {                        
+            // We want to highlight the handles of the current fragment only 
+            
+            /** First reset highlighting of the entire set of handles. */
+            // Create new (empty) style, we want to reset colors only, therefore use false in setCharacterAttributes
+            styleToUse = new SimpleAttributeSet();            
+
+            StyleConstants.setFontFamily(styleToUse, level.getCurrentDiscourse().getMMAX2().currentDisplayFontName);
+            
+            int[] startHandles = markable.getLeftHandlePositions();
+            int[] endHandles = markable.getRightHandlePositions();
+            
+            /** Iterate over all fragments in current markable */
+            for (int z=0;z<startHandles.length;z++)
+            {
+                StyleConstants.setBackground(styleToUse,level.getCurrentDiscourse().getCurrentMarkableChart().getPrevailingBackgroundColorForMarkableHandle(startHandles[z]));
+                doc.setCharacterAttributes(startHandles[z],1,styleToUse,false);
+                StyleConstants.setBackground(styleToUse,level.getCurrentDiscourse().getCurrentMarkableChart().getPrevailingBackgroundColorForMarkableHandle(endHandles[z]));
+                doc.setCharacterAttributes(endHandles[z],1,styleToUse,false);
+            }                
+            styleToUse = defaultActiveHandleStyle;
+            
+            int FragStart = -1;
+            int FragEnd = -1;
+            int currentStart = -1;
+            int currentEnd = -1;
+            int currentMinIndex = -1;
+            int currentMinDistance = Integer.MAX_VALUE;
+            int distToNextLeftHandle = -1;
+            int distToNextRightHandle = -1;
+            
+            for (int z=0;z<startHandles.length;z++)
+            {                
+                currentStart = startHandles[z];
+                currentEnd = endHandles[z];
+                
+                if (currentStart == pane.getCurrentDot() || currentEnd == pane.getCurrentDot())
+                {
+                    // The mouse was directly on a left or right handle
+                    FragStart = currentStart;
+                    FragEnd = currentEnd;
+                    doc.setCharacterAttributes(FragStart,1,styleToUse,false);
+                    doc.setCharacterAttributes(FragEnd,1,styleToUse,false);                   
+                    break;
+                }
+                else
+                {
+                    // Try to find the handle which is closest to currentDot !
+                    // Determine if a left or a right handle is closest to currentDot
+                    distToNextLeftHandle = Math.abs(currentStart-pane.getCurrentDot());
+                    distToNextRightHandle = Math.abs(currentEnd-pane.getCurrentDot());
+                    
+                    if (distToNextRightHandle < distToNextLeftHandle)
+                    {
+                        // The closest handle is a rightHandle
+                        if (distToNextRightHandle < currentMinDistance)
+                        {
+                            currentMinDistance = distToNextRightHandle;
+                            currentMinIndex = z;
+                        }                                                                                                       
+                    }
+                    else
+                    {
+                        // The closest handle is a leftHandle
+                        if (distToNextLeftHandle < currentMinDistance)
+                        {
+                            currentMinDistance = distToNextLeftHandle;
+                            currentMinIndex = z;
+                        }                        
+                    }
+                }                
+            }// for all handles
+            if (FragStart == -1 && FragEnd == -1)
+            {
+                // The fragment was found by determining the min dist
+                if (currentMinIndex != -1)
+                {
+                    FragStart = startHandles[currentMinIndex];
+                    FragEnd = endHandles[currentMinIndex];
+                    doc.setCharacterAttributes(FragStart,1,defaultActiveHandleStyle,false);
+                    doc.setCharacterAttributes(FragEnd,1,defaultActiveHandleStyle,false);
+                }
+                else
+                {
+                    System.err.println("Couldn't determine fragment!");
+                }
+            }
+        }
+    }    
+    
+    public final void removeHandlesAtDisplayPositions(Integer[] positions)
+    {
+        if (positions.length==0) return;
+        MMAX2Document doc = level.getCurrentDiscourse().getDisplayDocument();
+        doc.startChanges(positions[0].intValue(),positions[positions.length-1].intValue());
+        SimpleAttributeSet attribs = new SimpleAttributeSet();
+        // Todo: Make sure deleted handles appear in correct size and font as well
+        StyleConstants.setFontSize(attribs, level.getCurrentDiscourse().getMMAX2().currentDisplayFontSize);
+        StyleConstants.setFontFamily(attribs, level.getCurrentDiscourse().getMMAX2().currentDisplayFontName);
+        
+        StyleConstants.setForeground(attribs,Color.lightGray);
+        StyleConstants.setBackground(attribs,Color.white);
+        StyleConstants.setStrikeThrough(attribs,true);
+        for (int o=0;o<positions.length;o++)
+        {
+            doc.bulkApplyStyleToMarkableHandle(positions[o].intValue(),attribs,true);
+        }
+        doc.commitChanges();
+    }
+    
+    /** This method returns a SimpleAttributeSet with the attributes that Markable _markable has depending on 
+        its attributes. The method uses a (potentially empty) set of SimpleMarkableCustomization objects. */
+    public final SimpleAttributeSet getAttributesForMarkable(Markable _markable)
+    {
+        SimpleAttributeSet tempResult = null;
+        SimpleAttributeSet result = new SimpleAttributeSet();
+        SimpleAttributeSet intermediateResult = null;
+        
+        if (customizationCount != 0)
+        {                   
+            // There is at least one customization for Markables on this level. 
+            // Iterate over all customizations for this level (in order of precedence, i.e. top to bottom !)
+            for (int u=0;u<customizationCount;u++)
+            {
+                // Does the current customization match the current markable?
+                tempResult = customizations[u].matches(_markable);
+                if (tempResult != null)
+                {
+                    // A non-null tempResult was returned, which contains the attribute-dependent styles for the current Markable
+                    // Merge them with the attributes collected so far (none in first run)
+                    intermediateResult = mergeAttributes(tempResult,result);
+                    result = intermediateResult;
+                    intermediateResult = null;
+                }
+            }
+        }
+        return result;
+    }
+
+   
+    public final static SimpleAttributeSet mergeAttributes(SimpleAttributeSet superiorSet, SimpleAttributeSet inferiorSet)
+    {
+        // Create a new set from the supplied ones, adding those elements that are not contradictory
+        // If mutually exlusive attributes occur, take values from superiorSet
+        // Strategy: Take all in superior set and add non-contradictory ones from inferior set
+        
+        SimpleAttributeSet resultSet = new SimpleAttributeSet(superiorSet);
+        
+        if (StyleConstants.isSuperscript(inferiorSet))
+        {
+            // The inferior set has superscript on
+            if (StyleConstants.isSubscript(resultSet)==false)
+            {
+                // Since the superior set does not have sth. else in the same category, keep it
+                StyleConstants.setSuperscript(resultSet,true);
+            }
+        }
+
+        if (superiorSet.isDefined("handles")==false)
+        {
+            if (inferiorSet.isDefined("handles"))
+            {
+                resultSet.addAttribute("handles", inferiorSet.getAttribute("handles"));
+            }
+        }
