@@ -722,3 +722,182 @@ public class MarkableLevelRenderer
                 resultSet.addAttribute("handles", inferiorSet.getAttribute("handles"));
             }
         }
+        
+        if (StyleConstants.isSubscript(inferiorSet))
+        {
+            // The inferior set has subscript on
+            if (StyleConstants.isSuperscript(resultSet)==false)
+            {
+                // Since the superior set does not have sth. else in the same category, keep it
+                StyleConstants.setSubscript(resultSet,true);
+            }
+        }
+
+        if (StyleConstants.isStrikeThrough(inferiorSet))
+        {
+            // The inferior set has strikethrough on
+            if (StyleConstants.isUnderline(resultSet)==false)
+            {
+                // Since the superior set does not have sth. else in the same category, keep it
+                StyleConstants.setStrikeThrough(resultSet,true);
+            }
+        }
+
+        if (StyleConstants.isUnderline(inferiorSet))
+        {
+            // The inferior set has underline on
+            if (StyleConstants.isStrikeThrough(resultSet)==false)
+            {
+                // Since the superior set does not have sth. else in the same category, keep it
+                StyleConstants.setUnderline(resultSet,true);
+            }
+        }
+
+        if (StyleConstants.isBold(inferiorSet))
+        {
+            StyleConstants.setBold(resultSet,true);
+        }
+        
+        if (StyleConstants.isItalic(inferiorSet))
+        {
+            StyleConstants.setItalic(resultSet,true);
+        }
+        
+        
+        if (superiorSet.isDefined(StyleConstants.Foreground))
+        {
+            StyleConstants.setForeground(resultSet, StyleConstants.getForeground(superiorSet));            
+        }
+        else if (inferiorSet.isDefined(StyleConstants.Foreground))
+        {
+            StyleConstants.setForeground(resultSet, StyleConstants.getForeground(inferiorSet));            
+        }
+
+
+        if (superiorSet.isDefined(StyleConstants.Background))
+        {
+            StyleConstants.setBackground(resultSet, StyleConstants.getBackground(superiorSet));            
+        }
+        else if (inferiorSet.isDefined(StyleConstants.Background))
+        {
+            StyleConstants.setBackground(resultSet, StyleConstants.getBackground(inferiorSet));            
+        }
+        
+        if (inferiorSet.isDefined(StyleConstants.FontSize))
+        {
+            if (superiorSet.isDefined(StyleConstants.FontSize)==false)
+            {
+                StyleConstants.setFontSize(resultSet,StyleConstants.getFontSize(inferiorSet));
+            }
+        }
+       
+        return resultSet;        
+    }
+    
+    /********************************/
+  
+    public final void setHandleColor(Color _color)
+    {
+        StyleConstants.setBackground(defaultActiveHandleStyle, _color);
+    }
+    
+    public final void setBackgroundColor(Color _color)
+    {
+        backgroundColor =_color;
+        if (_color == null)
+        {
+            backgroundIsTransparent = true;
+        }
+        else
+        {
+            backgroundIsTransparent = false;
+        }
+    }    
+    public final Color getBackgroundColor()
+    {
+        return backgroundColor;
+    }
+    
+    public final void setForegroundColor(Color _color)
+    {
+        foregroundColor =_color;
+        if (_color == null)
+        {
+            foregroundIsTransparent = true;            
+        }
+        else
+        {
+            foregroundIsTransparent = false;
+        }
+    }    
+    
+    public final Color getForegroundColor()
+    {
+        return foregroundColor;
+    }
+        
+    public final boolean getForegroundIsTransparent()
+    {
+        return foregroundIsTransparent;
+    }
+
+    public final boolean getBackgroundIsTransparent()
+    {
+        return backgroundIsTransparent;
+    }    
+    
+    public final boolean getIsBold()
+    {
+        return bold;
+    }
+    public final void setIsBold(boolean status)
+    {
+        bold = status;        
+    }
+    
+    public final boolean getIsItalic()
+    {
+        return italic;
+    }
+    public final void setIsItalic(boolean status)
+    {
+        italic = status;
+    }
+    
+    public final boolean getIsUnderline()
+    {
+        return underline;
+    }
+    public final void setIsUnderline(boolean status)
+    {
+        underline = status;        
+    }
+    
+    public final boolean getIsSubscript()
+    {
+        return subscript;
+    }
+    public final void setIsSubscript(boolean status)
+    {
+        subscript = status;
+    }
+    
+    public final boolean getIsSuperscript()
+    {
+        return superscript;
+    }
+    public final void setIsSuperscript(boolean status)
+    {
+        superscript = status;
+    }
+    
+    public final boolean getIsStrikethrough()
+    {
+        return strikethrough;
+    }
+    public final void setIsStrikethrough(boolean status)
+    {
+        strikethrough = status;
+    }     
+    
+}
