@@ -26,4 +26,11 @@ import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
-import org.eml.MMAX2.annota
+import org.eml.MMAX2.annotation.markables.Markable;
+import org.eml.MMAX2.core.MMAX2;
+
+public class MMAX2Document extends DefaultStyledDocument
+{        
+    private DefaultDocumentEvent uncommittedChanges = null;
+    
+    private SimpleAttribu
