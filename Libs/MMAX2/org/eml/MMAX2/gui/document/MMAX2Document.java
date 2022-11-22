@@ -20,4 +20,10 @@ import java.awt.Font;
 
 import javax.swing.event.DocumentEvent;
 import javax.swing.text.AttributeSet;
-import javax.swing.text.DefaultStyledD
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Element;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+
+import org.eml.MMAX2.annota
