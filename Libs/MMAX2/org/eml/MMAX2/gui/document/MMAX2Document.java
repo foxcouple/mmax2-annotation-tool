@@ -13,4 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. */
 
-package o
+package org.eml.MMAX2.gui.document;
+
+import java.awt.Color;
+import java.awt.Font;
+
+import javax.swing.event.DocumentEvent;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.DefaultStyledD
