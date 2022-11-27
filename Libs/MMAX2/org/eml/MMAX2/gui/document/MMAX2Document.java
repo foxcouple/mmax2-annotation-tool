@@ -33,4 +33,9 @@ public class MMAX2Document extends DefaultStyledDocument
 {        
     private DefaultDocumentEvent uncommittedChanges = null;
     
-    private SimpleAttribu
+    private SimpleAttributeSet currentAttributes = null;        
+    
+    private MMAX2 mmax2 = null;
+    
+    /** Creates new MMAX2Document */
+    public MMAX2Document(String currentDisplayFontName, int currentDisp
