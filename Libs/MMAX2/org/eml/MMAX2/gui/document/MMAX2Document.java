@@ -38,4 +38,8 @@ public class MMAX2Document extends DefaultStyledDocument
     private MMAX2 mmax2 = null;
     
     /** Creates new MMAX2Document */
-    public MMAX2Document(String currentDisplayFontName, int currentDisp
+    public MMAX2Document(String currentDisplayFontName, int currentDisplayFontSize) 
+    {                      
+        currentAttributes = new SimpleAttributeSet();
+        StyleConstants.setLineSpacing(currentAttributes, (float)0.5);
+        setDisplayFontName(current
