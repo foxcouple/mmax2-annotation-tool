@@ -42,4 +42,11 @@ public class MMAX2Document extends DefaultStyledDocument
     {                      
         currentAttributes = new SimpleAttributeSet();
         StyleConstants.setLineSpacing(currentAttributes, (float)0.5);
-        setDisplayFontName(current
+        setDisplayFontName(currentDisplayFontName);
+        setDisplayFontSize(currentDisplayFontSize);        
+    }  
+
+    
+    public final void setMMAX2(MMAX2 _mmax2)
+    {
+        mmax2 = _
