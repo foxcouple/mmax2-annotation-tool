@@ -49,4 +49,12 @@ public class MMAX2Document extends DefaultStyledDocument
     
     public final void setMMAX2(MMAX2 _mmax2)
     {
-        mmax2 = _
+        mmax2 = _mmax2;     
+    }
+                
+    public final String getDisplayFontName()
+    {
+        return StyleConstants.getFontFamily(currentAttributes);
+    }
+    
+    public final void setDisp
