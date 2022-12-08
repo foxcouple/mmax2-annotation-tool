@@ -57,4 +57,8 @@ public class MMAX2Document extends DefaultStyledDocument
         return StyleConstants.getFontFamily(currentAttributes);
     }
     
-    public final void setDisp
+    public final void setDisplayFontName(String name)
+    {
+//    	Font f = new Font(name, Font.PLAIN, StyleConstants.getFontSize(currentAttributes));
+//        mmax2.getCurrentTextPane().setFont(f);
+        StyleConst
