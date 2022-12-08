@@ -61,4 +61,10 @@ public class MMAX2Document extends DefaultStyledDocument
     {
 //    	Font f = new Font(name, Font.PLAIN, StyleConstants.getFontSize(currentAttributes));
 //        mmax2.getCurrentTextPane().setFont(f);
-        StyleConst
+        StyleConstants.setFontFamily(currentAttributes,name);   
+        mmax2.markableSelectorFont = new Font(name, Font.PLAIN,11);        
+    }
+    
+    public final void setDisplayFontSize(int size)
+    {
+        StyleConstants
