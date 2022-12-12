@@ -74,4 +74,13 @@ public class MMAX2Document extends DefaultStyledDocument
     public final void setSize(int size)
     {
         flush();
-        StyleConstants.setFontSize(this.currentAttributes,si
+        StyleConstants.setFontSize(this.currentAttributes,size);
+    }
+        
+    public final void setBold(boolean status)// int documentPosition)
+    {
+        flush();
+        StyleConstants.setBold(currentAttributes,status);
+    }
+    
+    public final voi
