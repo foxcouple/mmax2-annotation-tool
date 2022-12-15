@@ -89,4 +89,13 @@ public class MMAX2Document extends DefaultStyledDocument
         StyleConstants.setUnderline(currentAttributes,status);        
     }
 
-    public final void setItali
+    public final void setItalic(boolean status)
+    {
+        flush();
+        StyleConstants.setItalic(currentAttributes,status);        
+    }
+
+    public final void setSubscript(boolean status)
+    {
+        flush();
+      
