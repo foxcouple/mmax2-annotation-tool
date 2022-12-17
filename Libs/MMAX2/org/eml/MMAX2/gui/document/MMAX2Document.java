@@ -98,4 +98,10 @@ public class MMAX2Document extends DefaultStyledDocument
     public final void setSubscript(boolean status)
     {
         flush();
-      
+        StyleConstants.setSubscript(currentAttributes,status);        
+    }
+
+    public final void setSuperscript(boolean status)
+    {
+        flush();
+        StyleConstants.setSuperscript(currentAttributes,s
