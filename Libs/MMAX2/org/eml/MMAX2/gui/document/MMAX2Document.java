@@ -104,4 +104,10 @@ public class MMAX2Document extends DefaultStyledDocument
     public final void setSuperscript(boolean status)
     {
         flush();
-        StyleConstants.setSuperscript(currentAttributes,s
+        StyleConstants.setSuperscript(currentAttributes,status);
+    }
+           
+    public final void setStrikeThrough(boolean status)
+    {
+        flush();
+        StyleConstants.setStrikeThrough(currentAttributes,status);                
