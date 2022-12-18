@@ -111,3 +111,11 @@ public class MMAX2Document extends DefaultStyledDocument
     {
         flush();
         StyleConstants.setStrikeThrough(currentAttributes,status);                
+    }
+      
+    public final void setColor(Color color, boolean status)
+    {
+        flush();
+        if (status)
+        {          
+            /** color is to be activated
