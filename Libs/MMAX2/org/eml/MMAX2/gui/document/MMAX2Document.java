@@ -126,4 +126,13 @@ public class MMAX2Document extends DefaultStyledDocument
 
     public final void setDefaultColor()
     {
-      
+        
+        flush();
+        // color is to be activated. So set it from current position on. 
+        StyleConstants.setForeground(currentAttributes, Color.black);        
+    }
+    
+    
+    public final void dump()
+    {
+  
