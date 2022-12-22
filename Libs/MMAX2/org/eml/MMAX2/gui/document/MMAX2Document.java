@@ -135,4 +135,14 @@ public class MMAX2Document extends DefaultStyledDocument
     
     public final void dump()
     {
-  
+        try
+        {
+            System.out.println(getText(0,getLength()));
+        }
+        catch (javax.swing.text.BadLocationException ex)
+        {
+            
+        }
+    }
+    
+    public
