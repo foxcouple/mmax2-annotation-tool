@@ -150,4 +150,7 @@ public class MMAX2Document extends DefaultStyledDocument
         int currentLen = getLength();
         String toAppend = mmax2.getCurrentDiscourse().getNextDocumentChunk();
         
-        if (to
+        if (toAppend.equals("")==false)
+        {                       
+            // Make all attribute sets distinct, so distinct elements are forced            
+            currentAttributes.a
