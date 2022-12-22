@@ -145,4 +145,9 @@ public class MMAX2Document extends DefaultStyledDocument
         }
     }
     
-    public
+    public void flush()
+    {                                                
+        int currentLen = getLength();
+        String toAppend = mmax2.getCurrentDiscourse().getNextDocumentChunk();
+        
+        if (to
