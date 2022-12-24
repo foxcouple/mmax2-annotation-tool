@@ -153,4 +153,9 @@ public class MMAX2Document extends DefaultStyledDocument
         if (toAppend.equals("")==false)
         {                       
             // Make all attribute sets distinct, so distinct elements are forced            
-            currentAttributes.a
+            currentAttributes.addAttribute("t",new String (currentLen+""));            
+            try
+            {
+                insertString(getLength(),toAppend, currentAttributes);
+            }
+            catc
