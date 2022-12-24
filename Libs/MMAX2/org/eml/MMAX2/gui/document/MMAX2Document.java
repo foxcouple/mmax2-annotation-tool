@@ -168,4 +168,9 @@ public class MMAX2Document extends DefaultStyledDocument
     /** OK */
     public final void bulkApplyStyleToDisplaySpanBackground(int firstDisplayPositionToChange, int sizeOfChange, AttributeSet s)//, boolean replaceBackground) 
     {
-        // Used for: setting / removing dragging selection 
+        // Used for: setting / removing dragging selection and
+        //           RENDER_IN_SET, RENDER_IN_SEARCHRESULT, RENDER_SELECTED, RENDER_UNSELECTED
+        
+        if (s.isDefined(StyleConstants.Background)==false)
+        {
+            System.err.printl
