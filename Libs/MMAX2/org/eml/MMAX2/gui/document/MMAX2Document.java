@@ -158,4 +158,12 @@ public class MMAX2Document extends DefaultStyledDocument
             {
                 insertString(getLength(),toAppend, currentAttributes);
             }
-            catc
+            catch (javax.swing.text.BadLocationException ex)
+            {
+                ex.printStackTrace();
+            }            
+        }
+    }
+            
+    /** OK */
+    public final void bulkApply
