@@ -173,4 +173,8 @@ public class MMAX2Document extends DefaultStyledDocument
         
         if (s.isDefined(StyleConstants.Background)==false)
         {
-            System.err.printl
+            System.err.println("Warning: No Background color defined in attributes for 'bulkApplyStyleToDisplaySpanBackground'!");            
+        }
+        
+        int offset =0;            
+        int start 
