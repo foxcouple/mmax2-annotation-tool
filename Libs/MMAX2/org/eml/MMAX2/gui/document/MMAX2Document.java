@@ -177,4 +177,11 @@ public class MMAX2Document extends DefaultStyledDocument
         }
         
         int offset =0;            
-        int start 
+        int start = 0;
+        int len =0 ;
+        Element run = null;
+        MutableAttributeSet attr = null;
+                        
+        for (int r=0;r<sizeOfChange;r++)
+        {                   
+            /
