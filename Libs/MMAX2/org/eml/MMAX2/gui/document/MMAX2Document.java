@@ -184,4 +184,7 @@ public class MMAX2Document extends DefaultStyledDocument
                         
         for (int r=0;r<sizeOfChange;r++)
         {                   
-            /
+            /* Get Start position of current fragment */
+            offset = firstDisplayPositionToChange+r;
+            run = getCharacterElement(offset);
+            if (mmax2.getUseFanc
