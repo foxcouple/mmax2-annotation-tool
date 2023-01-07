@@ -191,4 +191,11 @@ public class MMAX2Document extends DefaultStyledDocument
             {
                 if (mmax2.getCurrentDiscourse().getDiscoursePositionAtDisplayPosition(offset)==-1)
                 {                
-                    
+                    if (mmax2.getCurrentDiscourse().getMarkableAtDisplayAssociation(offset)==null)
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            start  = run.getSt
