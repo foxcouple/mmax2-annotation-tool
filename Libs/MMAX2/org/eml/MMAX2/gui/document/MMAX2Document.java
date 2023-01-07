@@ -203,4 +203,8 @@ public class MMAX2Document extends DefaultStyledDocument
             r = r + (len-1);            
             try
             {
-                attr = (MutableAttributeSet)
+                attr = (MutableAttributeSet) run.getAttributes();
+                
+                StyleConstants.setBackground((MutableAttributeSet)attr,StyleConstants.getBackground(s));
+            }
+            catch 
