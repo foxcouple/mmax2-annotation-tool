@@ -198,4 +198,9 @@ public class MMAX2Document extends DefaultStyledDocument
                 }
             }
 
-            start  = run.getSt
+            start  = run.getStartOffset();
+            len = run.getEndOffset()-start;
+            r = r + (len-1);            
+            try
+            {
+                attr = (MutableAttributeSet)
