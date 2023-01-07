@@ -187,4 +187,8 @@ public class MMAX2Document extends DefaultStyledDocument
             /* Get Start position of current fragment */
             offset = firstDisplayPositionToChange+r;
             run = getCharacterElement(offset);
-            if (mmax2.getUseFanc
+            if (mmax2.getUseFancyMultilineRendering())
+            {
+                if (mmax2.getCurrentDiscourse().getDiscoursePositionAtDisplayPosition(offset)==-1)
+                {                
+                    
