@@ -218,4 +218,9 @@ public class MMAX2Document extends DefaultStyledDocument
     }// method           
 
     /** OK */        
-    public final void bulkApplyStyleToMarkableHandle(int characterPosition, AttributeSet s, boolean replac
+    public final void bulkApplyStyleToMarkableHandle(int characterPosition, AttributeSet s, boolean replace)
+    {
+        Element run = null;
+        MutableAttributeSet attr = null;                               
+        run = getCharacterElement(characterPosition); 
+        attr = (MutableAttrib
