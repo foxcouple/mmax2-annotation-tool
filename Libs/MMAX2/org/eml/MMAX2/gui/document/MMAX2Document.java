@@ -223,4 +223,10 @@ public class MMAX2Document extends DefaultStyledDocument
         Element run = null;
         MutableAttributeSet attr = null;                               
         run = getCharacterElement(characterPosition); 
-        attr = (MutableAttrib
+        attr = (MutableAttributeSet) run.getAttributes();            
+        if (replace) attr.removeAttributes(attr);
+        attr.addAttributes(s);                
+    }
+    
+    /** OK */
+    public final void bulkApplyStyle
