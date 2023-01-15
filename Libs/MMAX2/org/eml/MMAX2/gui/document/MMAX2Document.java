@@ -207,4 +207,11 @@ public class MMAX2Document extends DefaultStyledDocument
                 
                 StyleConstants.setBackground((MutableAttributeSet)attr,StyleConstants.getBackground(s));
             }
-            catch 
+            catch (java.lang.Error ex)
+            {
+                ex.printStackTrace();
+            }
+            offset = 0;
+            run = null;
+            attr = null;
+        }// next r
