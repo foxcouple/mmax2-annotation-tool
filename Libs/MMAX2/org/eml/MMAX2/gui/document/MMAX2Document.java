@@ -214,4 +214,8 @@ public class MMAX2Document extends DefaultStyledDocument
             offset = 0;
             run = null;
             attr = null;
-        }// next r
+        }// next r                        
+    }// method           
+
+    /** OK */        
+    public final void bulkApplyStyleToMarkableHandle(int characterPosition, AttributeSet s, boolean replac
