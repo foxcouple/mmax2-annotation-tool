@@ -229,4 +229,9 @@ public class MMAX2Document extends DefaultStyledDocument
     }
     
     /** OK */
-    public final void bulkApplyStyle
+    public final void bulkApplyStyleToDiscourseElement(int discourseElementStartPosition, AttributeSet s, boolean replace) 
+    {        
+    		try 
+        	{
+            	Element run = null;
+            	MutableAttribute
