@@ -234,4 +234,9 @@ public class MMAX2Document extends DefaultStyledDocument
     		try 
         	{
             	Element run = null;
-            	MutableAttribute
+            	MutableAttributeSet attr = null;
+                               
+            	run = getCharacterElement(discourseElementStartPosition);           
+            	try
+            	{
+            		attr 
