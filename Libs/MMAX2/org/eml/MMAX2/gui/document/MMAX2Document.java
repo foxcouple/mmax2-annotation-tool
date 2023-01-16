@@ -239,4 +239,7 @@ public class MMAX2Document extends DefaultStyledDocument
             	run = getCharacterElement(discourseElementStartPosition);           
             	try
             	{
-            		attr 
+            		attr = (MutableAttributeSet) run.getAttributes();
+            		if (replace) attr.removeAttributes(attr);	                               
+            		attr.addAttributes(s);                
+   
