@@ -242,4 +242,10 @@ public class MMAX2Document extends DefaultStyledDocument
             		attr = (MutableAttributeSet) run.getAttributes();
             		if (replace) attr.removeAttributes(attr);	                               
             		attr.addAttributes(s);                
-   
+            	}
+            	catch (java.lang.Error ex)
+            	{
+            		ex.printStackTrace();
+            	}                                
+        	}// try  
+        	catch (java.lang.Exception ex
