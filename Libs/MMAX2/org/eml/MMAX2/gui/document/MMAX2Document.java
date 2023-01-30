@@ -248,4 +248,15 @@ public class MMAX2Document extends DefaultStyledDocument
             		ex.printStackTrace();
             	}                                
         	}// try  
-        	catch (java.lang.Exception ex
+        	catch (java.lang.Exception ex)
+        	{
+        		ex.printStackTrace();
+        	}
+    }           
+    
+    
+    public final void startChanges(Markable concerned)
+    {
+        if (concerned==null) return;
+        int start = 0;
+        
