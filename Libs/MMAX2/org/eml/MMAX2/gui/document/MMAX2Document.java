@@ -264,4 +264,12 @@ public class MMAX2Document extends DefaultStyledDocument
         end = concerned.getRightmostDisplayPosition();        
         startChanges(start,(end-start)+1);
         
-  
+    }
+    
+    public final void startChanges(Markable[] concerned)
+    {
+        int start = this.getLength();
+        int end = 0;
+        int currentLeft=0;
+        int currentRight=0;
+    
