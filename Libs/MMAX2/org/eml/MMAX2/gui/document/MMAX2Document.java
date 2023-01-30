@@ -259,4 +259,9 @@ public class MMAX2Document extends DefaultStyledDocument
     {
         if (concerned==null) return;
         int start = 0;
+        int end = 0;
+        start = concerned.getLeftmostDisplayPosition();
+        end = concerned.getRightmostDisplayPosition();        
+        startChanges(start,(end-start)+1);
         
+  
