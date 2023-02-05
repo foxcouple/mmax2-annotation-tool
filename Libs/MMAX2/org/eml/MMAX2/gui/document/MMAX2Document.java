@@ -272,4 +272,8 @@ public class MMAX2Document extends DefaultStyledDocument
         int end = 0;
         int currentLeft=0;
         int currentRight=0;
-    
+        for (int i=0;i<concerned.length;i++)
+        {
+            if (concerned[i]==null) continue;
+            currentLeft = ((Markable)concerned[i]).getLeftmostDisplayPosition();
+ 
