@@ -278,4 +278,11 @@ public class MMAX2Document extends DefaultStyledDocument
             currentLeft = ((Markable)concerned[i]).getLeftmostDisplayPosition();
             if (currentLeft < start) start = currentLeft;
             currentRight = ((Markable)concerned[i]).getRightmostDisplayPosition();
-            if (currentRight > end) end = currentRight;        
+            if (currentRight > end) end = currentRight;            
+        }        
+        startChanges(start,(end-start)+1);
+    }
+    
+    public final void startChanges(int start, int length)
+    {      	
+    	boolean verbose =
