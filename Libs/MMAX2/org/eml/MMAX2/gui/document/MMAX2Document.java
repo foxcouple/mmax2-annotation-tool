@@ -276,4 +276,6 @@ public class MMAX2Document extends DefaultStyledDocument
         {
             if (concerned[i]==null) continue;
             currentLeft = ((Markable)concerned[i]).getLeftmostDisplayPosition();
- 
+            if (currentLeft < start) start = currentLeft;
+            currentRight = ((Markable)concerned[i]).getRightmostDisplayPosition();
+            if (currentRight > end) end = currentRight;        
