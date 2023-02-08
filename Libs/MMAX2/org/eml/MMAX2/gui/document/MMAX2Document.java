@@ -305,4 +305,12 @@ public class MMAX2Document extends DefaultStyledDocument
 
     public final void commitChanges()
     {
-    	boolean verbose = f
+    	boolean verbose = false;
+    	
+    	String verboseVar = System.getProperty("verbose");
+    	if (verboseVar != null && verboseVar.equalsIgnoreCase("false"))
+    	{
+    		verbose = false;
+    	}
+
+    
