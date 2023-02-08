@@ -299,4 +299,10 @@ public class MMAX2Document extends DefaultStyledDocument
             commitChanges();
         }
         writeLock();
-        uncommittedCha
+        uncommittedChanges = new DefaultDocumentEvent(start, length, DocumentEvent.EventType.CHANGE);
+    	if (verbose) System.err.println("done!");
+    }
+
+    public final void commitChanges()
+    {
+    	boolean verbose = f
