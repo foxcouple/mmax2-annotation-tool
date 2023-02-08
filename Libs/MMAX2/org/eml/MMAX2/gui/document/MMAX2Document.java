@@ -293,4 +293,10 @@ public class MMAX2Document extends DefaultStyledDocument
     		verbose = false;
     	}
 
-    	if (
+    	if (verbose) System.err.print("Starting changes ... ");
+        if (uncommittedChanges != null)
+        {
+            commitChanges();
+        }
+        writeLock();
+        uncommittedCha
