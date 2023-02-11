@@ -313,4 +313,12 @@ public class MMAX2Document extends DefaultStyledDocument
     		verbose = false;
     	}
 
-    
+    	if (verbose) System.err.println("Committing changes ... ");
+    	
+        if (uncommittedChanges == null)
+        {
+            return;
+        }
+        uncommittedChanges.end();            
+        try
+  
