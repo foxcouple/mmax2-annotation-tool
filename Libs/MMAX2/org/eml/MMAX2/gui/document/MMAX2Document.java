@@ -328,4 +328,8 @@ public class MMAX2Document extends DefaultStyledDocument
         {
 
         }        
-        un
+        uncommittedChanges = null;
+        writeUnlock();
+        if (verbose) System.err.println("done!");
+    }   
+}
