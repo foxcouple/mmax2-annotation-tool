@@ -321,4 +321,11 @@ public class MMAX2Document extends DefaultStyledDocument
         }
         uncommittedChanges.end();            
         try
-  
+        {
+            fireChangedUpdate(uncommittedChanges);
+        }
+        catch (java.lang.ArrayIndexOutOfBoundsException ex)
+        {
+
+        }        
+        un
