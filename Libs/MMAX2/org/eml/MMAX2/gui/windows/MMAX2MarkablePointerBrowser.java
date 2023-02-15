@@ -253,3 +253,59 @@ public class MMAX2MarkablePointerBrowser extends javax.swing.JFrame implements j
     	resetPermanentDisplay();
         mmax2.unregisterMarkablePointerBrowser(this);
         dispose();
+    }
+    
+
+    
+    public void actionPerformed(java.awt.event.ActionEvent e) 
+    {
+        if (e.getSource() instanceof JCheckBox)
+        {
+            update();
+            return;
+        }
+        JComboBox source = (JComboBox) e.getSource();
+        if (source == levelBox)
+        {
+            // Some action occurred on the box for selecting the levels
+            resetPermanentDisplay();
+            updateAttributeList((String)source.getSelectedItem());            
+        }
+        else if (source == attributeBox)
+        {
+            resetPermanentDisplay();
+            if (source.getSelectedIndex()!=0)
+            {
+                permanentBox.setEnabled(true);
+            }
+            else
+            {
+                permanentBox.setEnabled(false);
+            }
+            updatePointerDisplay((String)levelBox.getSelectedItem(),(String)source.getSelectedItem());
+        }
+    }        
+            
+    public void windowActivated(java.awt.event.WindowEvent e) {
+    }
+    
+    public void windowClosed(java.awt.event.WindowEvent e) {
+    }
+    
+    public void windowClosing(java.awt.event.WindowEvent e) 
+    {
+        dismiss();
+    }
+    
+    public void windowDeactivated(java.awt.event.WindowEvent e) {
+    }
+    
+    public void windowDeiconified(java.awt.event.WindowEvent e) {
+    }
+    
+    public void windowIconified(java.awt.event.WindowEvent e) {
+    }
+    
+    public void windowOpened(java.awt.event.WindowEvent e) {
+    }        
+}
