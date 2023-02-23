@@ -16,4 +16,12 @@
 package org.eml.MMAX2.gui.windows;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
-import java.awt.imag
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+public class MMAX2PopupWi
