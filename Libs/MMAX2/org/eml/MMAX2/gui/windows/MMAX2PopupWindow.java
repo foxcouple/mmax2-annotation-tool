@@ -24,4 +24,11 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-public class MMAX2PopupWi
+public class MMAX2PopupWindow extends javax.swing.JPopupMenu
+{
+    public MMAX2PopupWindow(final String string) 
+    {    	
+    	super();
+    	BufferedImage before = null;
+    	try {
+    	    before = ImageIO.read(new File(
