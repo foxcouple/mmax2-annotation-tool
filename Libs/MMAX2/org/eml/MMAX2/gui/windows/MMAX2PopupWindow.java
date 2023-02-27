@@ -45,4 +45,10 @@ public class MMAX2PopupWindow extends javax.swing.JPopupMenu
 	    grph.scale(SCALE, SCALE);
 
 	    grph.drawImage(before, 0, 0, null);
-	    grph.dispose()
+	    grph.dispose();
+    	    	
+        ImageIcon icon = new ImageIcon(after);
+//        System.out.println(icon.getIconHeight());
+//        System.out.println(icon);
+        JLabel label = new JLabel(); 
+        label.setIcon(icon
