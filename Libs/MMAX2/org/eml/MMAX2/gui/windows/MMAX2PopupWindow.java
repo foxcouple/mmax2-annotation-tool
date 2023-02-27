@@ -38,4 +38,11 @@ public class MMAX2PopupWindow extends javax.swing.JPopupMenu
 //    	System.out.println(before.getWidth());
     	
     	double SCALE = 0.1;
-    	BufferedImage after = new BufferedImage((int)(SCALE * before.getWidth(null)), (int) (SCA
+    	BufferedImage after = new BufferedImage((int)(SCALE * before.getWidth(null)), (int) (SCALE
+    	        * before.getHeight(null)), before.getType());
+
+	    Graphics2D grph = (Graphics2D) after.getGraphics();
+	    grph.scale(SCALE, SCALE);
+
+	    grph.drawImage(before, 0, 0, null);
+	    grph.dispose()
