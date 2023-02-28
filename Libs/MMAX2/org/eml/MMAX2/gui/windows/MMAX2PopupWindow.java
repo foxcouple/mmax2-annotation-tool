@@ -60,4 +60,8 @@ public class MMAX2PopupWindow extends javax.swing.JPopupMenu
 //    	int w = before.getWidth();
 //    	int h = before.getHeight();
 //    	BufferedImage after = new BufferedImage(w, h, before.getType());
-//    	Affi
+//    	AffineTransform at = new AffineTransform();
+//    	at.scale(0.1, 0.1);
+//    	AffineTransformOp scaleOp = 
+//    	   new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+//    	after = scaleOp.filt
