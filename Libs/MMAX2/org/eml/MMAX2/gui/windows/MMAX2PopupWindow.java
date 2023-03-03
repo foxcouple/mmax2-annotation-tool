@@ -70,4 +70,10 @@ public class MMAX2PopupWindow extends javax.swing.JPopupMenu
 //        ImageIcon icon = new ImageIcon(after);
 //        System.out.println(icon.getIconHeight());
 //        System.out.println(icon);
-//        JLabel label = new JLa
+//        JLabel label = new JLabel(); 
+//        label.setIcon(icon);
+//        this.add(label);	
+//        //this.pack();
+    }
+    
+}
