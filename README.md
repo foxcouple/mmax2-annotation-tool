@@ -9,4 +9,6 @@ Previous versions are available in the MMAX2 [jar_archive](jar_archive/)
 
 #### Changes:
 ##### Upon saving markable files, a time-stamped backup file will be created.
-##
+##### Command-line parameter -no_validation can be passed to skip validation on start-up.
+##### The default line spacing has been increased.
+##### Attribute panel setting 'Warn on extra attributes' is set t
