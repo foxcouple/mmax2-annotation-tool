@@ -15,4 +15,10 @@ Previous versions are available in the MMAX2 [jar_archive](jar_archive/)
 ##### When loading a .mmax file, the current file (if any) is pre-selected in the file chooser dialog.
 ##### Reduced verbosity of console output.
 ##### Some bug fixes:
-###
+###### Issue 2 (pointer-relation rendering of discontiuous markables)
+###### Customized line spacing is retained after style-sheet reapplication
+
+
+#####
+
+NEW (16.11.2020): Added mmax2_flex.sh, whic
