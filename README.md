@@ -23,4 +23,5 @@ Previous versions are available in the MMAX2 [jar_archive](jar_archive/)
 
 NEW (16.11.2020): Added mmax2_flex.sh, which accepts as an optional second parameter an alternative common_paths file.
 
-NEW (16.02.2020): MMAX2 has been updated to work with current Java versions. The previous version was 
+NEW (16.02.2020): MMAX2 has been updated to work with current Java versions. The previous version was based on outdated Xalan and Xerces versions, which have been replaced in this repo.
+
