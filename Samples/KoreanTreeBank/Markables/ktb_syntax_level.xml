@@ -1,0 +1,31 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE markables SYSTEM "markables.dtd">
+<markables xmlns="www.eml.org/NameSpaces/syntax">
+<markable id="markable_1791" span="word_343..word_347" toplevel="true"  mmax_level="syntax"  value="s"  number="228" />
+<markable id="markable_1792" span="word_343..word_346" toplevel="false"  mmax_level="syntax"  value="np"  number="229" />
+<markable id="markable_1790" span="word_339..word_341" toplevel="false"  mmax_level="syntax"  value="vx"  number="227" />
+<markable id="markable_1795" span="word_349..word_357" toplevel="false"  mmax_level="syntax"  value="vp"  number="232" />
+<markable id="markable_1796" span="word_349..word_357" toplevel="false"  mmax_level="syntax"  value="np"  number="233" />
+<markable id="markable_1793" span="word_348..word_358" toplevel="true"  mmax_level="syntax"  value="s"  number="230" />
+<markable id="markable_1794" span="word_348" toplevel="false"  mmax_level="syntax"  value="np-sbj"  number="231" />
+<markable id="markable_1799" span="word_350..word_354" toplevel="false"  mmax_level="syntax"  value="vp"  number="236" />
+<markable id="markable_1797" span="word_349..word_354" toplevel="false"  mmax_level="syntax"  value="s"  number="234" />
+<markable id="markable_1798" span="word_349" toplevel="false"  mmax_level="syntax"  value="np-sbj"  number="235" />
+<markable id="markable_1779" span="word_324..word_342" toplevel="true"  mmax_level="syntax"  value="s"  number="216" />
+<markable id="markable_1780" span="word_324" toplevel="false"  mmax_level="syntax"  value="advp"  number="217" />
+<markable id="markable_1781" span="word_325..word_341" toplevel="false"  mmax_level="syntax"  value="s"  number="218" />
+<markable id="markable_1786" span="word_326..word_330" toplevel="false"  mmax_level="syntax"  value="np"  number="223" />
+<markable id="markable_1787" span="word_327..word_329" toplevel="false"  mmax_level="syntax"  value="prn"  number="224" />
+<markable id="markable_1788" span="word_331..word_338" toplevel="false"  mmax_level="syntax"  value="np"  number="225" />
+<markable id="markable_1789" span="word_332..word_334" toplevel="false"  mmax_level="syntax"  value="prn"  number="226" />
+<markable id="markable_1782" span="word_325" toplevel="false"  mmax_level="syntax"  value="np-sbj"  number="219" />
+<markable id="markable_1783" span="word_326..word_341" toplevel="false"  mmax_level="syntax"  value="vp"  number="220" />
+<markable id="markable_1784" span="word_326..word_338" toplevel="false"  mmax_level="syntax"  value="vp"  number="221" />
+<markable id="markable_1785" span="word_326..word_338" toplevel="false"  mmax_level="syntax"  value="np"  number="222" />
+<markable id="markable_1769" span="word_307..word_309" toplevel="false"  mmax_level="syntax"  value="vp"  number="206" />
+<markable id="markable_1768" span="word_306" toplevel="false"  mmax_level="syntax"  value="advp"  number="205" />
+<markable id="markable_1770" span="word_307..word_309" toplevel="false"  mmax_level="syntax"  value="lv"  number="207" />
+<markable id="markable_1777" span="word_316..word_318" toplevel="false"  mmax_level="syntax"  value="np-comp"  number="214" />
+<markable id="markable_1778" span="word_319..word_322" toplevel="false"  mmax_level="syntax"  value="vv"  number="215" />
+<markable id="markable_1775" span="word_313..word_322" toplevel="false"  mmax_level="syntax"  value="vp"  number="212" />
