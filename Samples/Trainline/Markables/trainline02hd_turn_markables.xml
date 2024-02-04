@@ -37,4 +37,6 @@
 <markable id="markable_27" span="word_179..word_193" mmax_level="turns"  speaker="a"  number="27" />
 <markable id="markable_1" span="word_0..word_16" mmax_level="turns"  speaker="a"  number="1" />
 <markable id="markable_26" span="word_176..word_178" mmax_level="turns"  speaker="b"  number="26" />
-<markable id="markable_21" span="word_126..word_129" mmax_level="t
+<markable id="markable_21" span="word_126..word_129" mmax_level="turns"  speaker="a"  number="21" />
+<markable id="markable_20" span="word_124..word_125" mmax_level="turns"  speaker="b"  number="20" />
+</markables>
