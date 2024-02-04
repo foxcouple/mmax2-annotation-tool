@@ -49,3 +49,15 @@
 <markable id="markable_55" span="word_138..word_143" topic="day"  sp-act="confirm"  mmax_level="utterances"  polarity="positive"  type="decl" />
 <markable id="markable_23" span="word_57..word_64" topic="day"  sp-act="answ"  mmax_level="utterances"  polarity="positive"  type="decl"  mode="opinion-closure" />
 <markable id="markable_92" span="word_285..word_287" sp-act="ackn"  mmax_level="utterances"  polarity="positive"  type="dm" />
+<markable id="markable_4" span="word_7..word_16" topic="journey"  sp-act="reqdirect"  mmax_level="utterances"  polarity="positive"  type="q-wh"  mode="preference-open" />
+<markable id="markable_3" span="word_5..word_6" sp-act="identifyself"  mmax_level="utterances"  polarity="positive"  type="frag"  mode="intro" />
+<markable id="markable_29" span="word_70..word_71" topic="month"  sp-act="echo"  mmax_level="utterances"  polarity="positive"  type="frag"  mode="partial" />
+<markable id="markable_2" span="word_2..word_4" sp-act="refer"  mmax_level="utterances"  polarity="positive"  type="frag"  mode="deixis" />
+<markable id="markable_27" span="word_68..word_69" topic="month"  sp-act="complete"  mmax_level="utterances"  polarity="positive"  type="frag"  mode="partial" />
+<markable id="markable_1" span="word_0..word_1" sp-act="greet"  mmax_level="utterances"  polarity="positive"  type="frag"  mode="opening-greet" />
+<markable id="markable_95" span="word_290..word_292" sp-act="bye"  mmax_level="utterances"  polarity="positive"  type="frag"  mode="farewell-closing-partial" />
+<markable id="markable_50" span="word_126..word_129" topic="time-departure"  sp-act="reqinfo"  mmax_level="utterances"  polarity="positive"  type="q-wh"  mode="open" />
+<markable id="markable_21" span="word_50..word_56" topic="date-journey"  sp-act="reqinfo"  mmax_level="utterances"  polarity="positive"  type="q-wh"  mode="open" />
+<markable id="markable_54" span="word_134..word_137" topic="time"  sp-act="refer"  mmax_level="utterances"  polarity="positive"  type="frag"  mode="deixis" />
+<markable id="markable_52" span="word_130..word_133" topic="time"  sp-act="answ"  mmax_level="utterances"  polarity="positive"  type="frag"  mode="closure" />
+</markables>
