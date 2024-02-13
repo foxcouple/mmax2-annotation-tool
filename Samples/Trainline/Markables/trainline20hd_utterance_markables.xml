@@ -13,4 +13,6 @@
 <markable id="markable_19" span="word_95..word_98" sp-act="answ"  type="decl"  topic="creditcard"  mode="closure"  polarity="positive" />
 <markable id="markable_60" span="word_201..word_204" sp-act="correct-self"  type="decl"  mode="report"  polarity="negative" />
 <markable id="markable_66" span="word_213" sp-act="ackn"  type="yes"  polarity="none" />
-<markable id="markable_14" span="word_65..word_82" sp-act="directelab"  type="decl"  topic="number-day-fare-avail"  mode="constrain-report-condition-clos
+<markable id="markable_14" span="word_65..word_82" sp-act="directelab"  type="decl"  topic="number-day-fare-avail"  mode="constrain-report-condition-closure"  polarity="positive" />
+<markable id="markable_78" span="word_249..word_250" sp-act="init"  type="dm"  polarity="positive" />
+<markable id="markable_67" span="word_214..word_223" sp-act="reqmodal"  t
