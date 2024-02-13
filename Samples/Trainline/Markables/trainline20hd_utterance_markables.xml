@@ -12,4 +12,5 @@
 <markable id="markable_34" span="word_134..word_136" sp-act="answelab"  type="frag"  topic="time"  mode="closure"  polarity="positive" />
 <markable id="markable_19" span="word_95..word_98" sp-act="answ"  type="decl"  topic="creditcard"  mode="closure"  polarity="positive" />
 <markable id="markable_60" span="word_201..word_204" sp-act="correct-self"  type="decl"  mode="report"  polarity="negative" />
-<markable id="markable_66" span="word_213" sp
+<markable id="markable_66" span="word_213" sp-act="ackn"  type="yes"  polarity="none" />
+<markable id="markable_14" span="word_65..word_82" sp-act="directelab"  type="decl"  topic="number-day-fare-avail"  mode="constrain-report-condition-clos
