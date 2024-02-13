@@ -15,4 +15,6 @@
 <markable id="markable_66" span="word_213" sp-act="ackn"  type="yes"  polarity="none" />
 <markable id="markable_14" span="word_65..word_82" sp-act="directelab"  type="decl"  topic="number-day-fare-avail"  mode="constrain-report-condition-closure"  polarity="positive" />
 <markable id="markable_78" span="word_249..word_250" sp-act="init"  type="dm"  polarity="positive" />
-<markable id="markable_67" span="word_214..word_223" sp-act="reqmodal"  t
+<markable id="markable_67" span="word_214..word_223" sp-act="reqmodal"  type="q-yn"  topic="time-booking"  mode="closed"  polarity="positive" />
+<markable id="markable_6" span="word_16" sp-act="greet"  type="frag"  mode="opening-greet-partial"  polarity="positive" />
+<markable id="markab
