@@ -17,4 +17,5 @@
 <markable id="markable_78" span="word_249..word_250" sp-act="init"  type="dm"  polarity="positive" />
 <markable id="markable_67" span="word_214..word_223" sp-act="reqmodal"  type="q-yn"  topic="time-booking"  mode="closed"  polarity="positive" />
 <markable id="markable_6" span="word_16" sp-act="greet"  type="frag"  mode="opening-greet-partial"  polarity="positive" />
-<markable id="markab
+<markable id="markable_58" span="word_196..word_197" sp-act="answ"  type="no"  polarity="none" />
+<markable id="markable_79" span="word_251..word_256" sp-act="informintent"  type="decl"  topic="time"  mode="intent"  pola
