@@ -20,4 +20,6 @@
 <markable id="markable_58" span="word_196..word_197" sp-act="answ"  type="no"  polarity="none" />
 <markable id="markable_79" span="word_251..word_256" sp-act="informintent"  type="decl"  topic="time"  mode="intent"  polarity="positive" />
 <markable id="markable_36" span="word_137..word_138" sp-act="init"  type="dm"  polarity="none" />
-<markable id="markable_4" span="word_6..word_15" sp-act="reqdirect"  type="q-wh"  topi
+<markable id="markable_4" span="word_6..word_15" sp-act="reqdirect"  type="q-wh"  topic="journey"  mode="preference-open"  polarity="positive" />
+<markable id="markable_51" span="word_180" sp-act="ackn"  type="dm"  polarity="positive" />
+<markable id="markable_41" span="word_164..word_166" sp-act=
