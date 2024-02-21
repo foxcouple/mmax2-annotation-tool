@@ -30,4 +30,6 @@
 <markable id="markable_54" span="word_187" sp-act="ackn"  type="yes"  polarity="none" />
 <markable id="markable_70" span="word_225" sp-act="init"  type="dm"  polarity="positive" />
 <markable id="markable_17" span="word_84..word_94" sp-act="reqinfo"  type="q-yn"  topic="creditcard"  mode="closed"  polarity="positive" />
-<markable id="markable_8" span="word_20..word_37" sp-act="direct"  type="decl"  topic="to-from-fare-location-avail-journey"  mode="in
+<markable id="markable_8" span="word_20..word_37" sp-act="direct"  type="decl"  topic="to-from-fare-location-avail-journey"  mode="intent-preference-exists-condition-closure"  polarity="positive" />
+<markable id="markable_69" span="word_224" sp-act="accept"  type="dm"  polarity="positive" />
+<markable id="markable_83" 
