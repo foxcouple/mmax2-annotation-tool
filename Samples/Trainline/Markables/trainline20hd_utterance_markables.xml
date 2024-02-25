@@ -35,4 +35,6 @@
 <markable id="markable_83" span="word_260..word_262" sp-act="thank"  type="frag"  polarity="positive" />
 <markable id="markable_72" span="word_232..word_244" sp-act="answelab"  type="decl"  topic="time-booking-day-journey"  mode="constrain-closure"  polarity="positive" />
 <markable id="markable_26" span="word_108..word_112" sp-act="reqinfo"  type="q-yn"  mode="closed"  polarity="positive" />
-<markable id="markabl
+<markable id="markable_16" span="word_83" sp-act="init"  type="dm"  polarity="none" />
+<markable id="markable_7" span="word_17..word_19" sp-act="greet"  type="frag"  mode="opening-greet"  polarity="positive" />
+<markable id
