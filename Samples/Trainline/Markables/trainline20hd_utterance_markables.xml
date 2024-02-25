@@ -37,4 +37,5 @@
 <markable id="markable_26" span="word_108..word_112" sp-act="reqinfo"  type="q-yn"  mode="closed"  polarity="positive" />
 <markable id="markable_16" span="word_83" sp-act="init"  type="dm"  polarity="none" />
 <markable id="markable_7" span="word_17..word_19" sp-act="greet"  type="frag"  mode="opening-greet"  polarity="positive" />
-<markable id
+<markable id="markable_25" span="word_107" sp-act="init"  type="dm"  polarity="none" />
+<markable id="markable_46" span="word_170..word_171" sp-act="echo"  type="frag"  topic="enum
