@@ -38,4 +38,6 @@
 <markable id="markable_16" span="word_83" sp-act="init"  type="dm"  polarity="none" />
 <markable id="markable_7" span="word_17..word_19" sp-act="greet"  type="frag"  mode="opening-greet"  polarity="positive" />
 <markable id="markable_25" span="word_107" sp-act="init"  type="dm"  polarity="none" />
-<markable id="markable_46" span="word_170..word_171" sp-act="echo"  type="frag"  topic="enum
+<markable id="markable_46" span="word_170..word_171" sp-act="echo"  type="frag"  topic="enum"  polarity="positive" />
+<markable id="markable_44" span="word_168..word_169" sp-act="correct"  type="frag"  topic="enum"  polarity="positive" />
+<markable id="markable_39" span="word_160..word_163" sp-act="i
