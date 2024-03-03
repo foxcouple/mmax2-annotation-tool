@@ -41,4 +41,6 @@
 <markable id="markable_46" span="word_170..word_171" sp-act="echo"  type="frag"  topic="enum"  polarity="positive" />
 <markable id="markable_44" span="word_168..word_169" sp-act="correct"  type="frag"  topic="enum"  polarity="positive" />
 <markable id="markable_39" span="word_160..word_163" sp-act="inform"  type="frag"  topic="time-arrival"  polarity="positive" />
-<markable id="markable_11" span="word_40..word_55" sp-act="reqdirect"  type="q-yn"  topic="booking-journey"  mode="preference-altern
+<markable id="markable_11" span="word_40..word_55" sp-act="reqdirect"  type="q-yn"  topic="booking-journey"  mode="preference-alternative-closed"  polarity="positive" />
+<markable id="markable_81" span="word_257..word_259" sp-act="ackn"  type="dm"  polarity="positive" />
+<markable id="markable_65" span="word_211..word_212" sp-act="ack
