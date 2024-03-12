@@ -48,4 +48,6 @@
 <markable id="markable_43" span="word_167" sp-act="negate"  type="no"  polarity="none" />
 <markable id="markable_1" span="word_0..word_1" sp-act="greet"  type="frag"  mode="opening-greet"  polarity="positive" />
 <markable id="markable_59" span="word_198..word_200" sp-act="answelab"  type="decl"  mode="report-closure"  polarity="negative" />
-<markable id="markable_84" span="word_263..word_265" sp-act="b
+<markable id="markable_84" span="word_263..word_265" sp-act="bye"  type="frag"  mode="farewell-closing"  polarity="positive" />
+<markable id="markable_37" span="word_139..word_145" sp-act="refer"  type="frag"  topic="fare"  mode="deixis"  polarity="positive" />
+<markable id="markable_52"
