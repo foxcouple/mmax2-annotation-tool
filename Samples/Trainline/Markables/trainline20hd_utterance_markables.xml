@@ -46,4 +46,6 @@
 <markable id="markable_65" span="word_211..word_212" sp-act="ackn"  type="dm"  polarity="positive" />
 <markable id="markable_13" span="word_56..word_64" sp-act="direct"  type="frag"  topic="booking"  mode="report-intent-preference"  polarity="positive" />
 <markable id="markable_43" span="word_167" sp-act="negate"  type="no"  polarity="none" />
-<markable id="markable_1" span="word_0..word_1" sp-act="greet"  type="frag"  mode="opening-gree
+<markable id="markable_1" span="word_0..word_1" sp-act="greet"  type="frag"  mode="opening-greet"  polarity="positive" />
+<markable id="markable_59" span="word_198..word_200" sp-act="answelab"  type="decl"  mode="report-closure"  polarity="negative" />
+<markable id="markable_84" span="word_263..word_265" sp-act="b
