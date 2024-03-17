@@ -50,4 +50,5 @@
 <markable id="markable_59" span="word_198..word_200" sp-act="answelab"  type="decl"  mode="report-closure"  polarity="negative" />
 <markable id="markable_84" span="word_263..word_265" sp-act="bye"  type="frag"  mode="farewell-closing"  polarity="positive" />
 <markable id="markable_37" span="word_139..word_145" sp-act="refer"  type="frag"  topic="fare"  mode="deixis"  polarity="positive" />
-<markable id="markable_52"
+<markable id="markable_52" span="word_181..word_186" sp-act="confirm"  type="decl"  topic="fare"  polarity="positive" />
+<markable id="markable_21" span="word_99..word_104" sp-act="reqinfo"  type="q-yn"
