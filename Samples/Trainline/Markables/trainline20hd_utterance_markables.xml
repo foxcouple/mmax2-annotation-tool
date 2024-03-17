@@ -55,4 +55,6 @@
 <markable id="markable_63" span="word_209..word_210" sp-act="ackn"  type="dm"  polarity="positive" />
 <markable id="markable_38" span="word_146..word_159" sp-act="inform"  type="decl"  topic="time-avail"  polarity="positive" />
 <markable id="markable_49" span="word_179" sp-act="ackn"  type="yes"  polarity="none" />
-<markable id="markable_10" 
+<markable id="markable_10" span="word_38..word_39" sp-act="init"  type="dm"  polarity="none" />
+<markable id="markable_3" span="word_4..word_5" sp-act="identifyself"  type="frag"  mode="intro"  polarity="positive" />
+<
