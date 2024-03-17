@@ -53,4 +53,6 @@
 <markable id="markable_52" span="word_181..word_186" sp-act="confirm"  type="decl"  topic="fare"  polarity="positive" />
 <markable id="markable_21" span="word_99..word_104" sp-act="reqinfo"  type="q-yn"  topic="day"  mode="closed"  polarity="positive" />
 <markable id="markable_63" span="word_209..word_210" sp-act="ackn"  type="dm"  polarity="positive" />
-<markable id="markable_38" span="word_146..word_
+<markable id="markable_38" span="word_146..word_159" sp-act="inform"  type="decl"  topic="time-avail"  polarity="positive" />
+<markable id="markable_49" span="word_179" sp-act="ackn"  type="yes"  polarity="none" />
+<markable id="markable_10" 
