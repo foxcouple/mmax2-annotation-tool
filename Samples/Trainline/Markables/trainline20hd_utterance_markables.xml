@@ -58,4 +58,5 @@
 <markable id="markable_10" span="word_38..word_39" sp-act="init"  type="dm"  polarity="none" />
 <markable id="markable_3" span="word_4..word_5" sp-act="identifyself"  type="frag"  mode="intro"  polarity="positive" />
 <markable id="markable_55" span="word_188" sp-act="init"  type="dm"  polarity="none" />
-<markable id="markable_71" span="word_226..word_231" sp-act="answ"  type="decl"  topic="avail"  mode="constrain"  polarity="posit
+<markable id="markable_71" span="word_226..word_231" sp-act="answ"  type="decl"  topic="avail"  mode="constrain"  polarity="positive" />
+</markables>

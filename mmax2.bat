@@ -1,0 +1,1 @@
+rem java -classpath Libs/annotationdiffplugin.jar;Libs/MMAX2.jar;Libs/batik-1.5.1/batik-awt-util.jar;Libs/batik-1.5.1/batik-dom.jar;Libs/batik-1.5.1/batik-svggen.jar;Libs/batik-1.5.1/batik-util.jar;Libs/
