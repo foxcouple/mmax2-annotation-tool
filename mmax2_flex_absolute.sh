@@ -8,3 +8,11 @@ if [ $# -eq 0 ]; then
 fi
 
 if [ $# -eq 1 ]; then
+	echo "Using default common_paths.xml"
+	java -Dfreetext_field_columns=20 -Dfreetext_font_increase=2 -classpath  $libs org.eml.MMAX2.core.MMAX2 $1
+fi
+
+if [ $# -eq 2 ]; then
+	echo "Using provided common_paths:" $2
+	java -Dfreetext_field_columns=20 -Dfreetext_font_increase=2 -classpath $libs org.eml.MMAX2.core.MMAX2 $1 -common_paths $2
+fi
