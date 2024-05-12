@@ -2,4 +2,6 @@ For the playback of MP3 files (and solely for this purpose), MMAX2 had successfu
 
 - MP3SPI Version 1.9.1 (mp3spi1.9.1.jar) ([source](http://www.javazoom.net/mp3spi/sources.html))
 - JLayer Version 0.4 (jl0.4.jar) ([source](http://www.javazoom.net/javalayer/sources.html))
-- Tr
+- Tritonus (tritonus_share.jar) ([source](http://www.tritonus.org/tritonus_share.jar))
+
+Take into consideration that MMAX2 is *fully functional* even without the inclusion of these libraries.
