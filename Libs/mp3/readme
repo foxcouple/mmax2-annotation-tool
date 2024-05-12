@@ -1,3 +1,5 @@
 For the playback of MP3 files (and solely for this purpose), MMAX2 had successfully utilized the following libraries. Kindly note, these libraries are released under the GPL resp. LGPL license. To evade any license issues, these libraries are *not* accompanied with this distribution. However, they can be retrieved at the locations provided below.
 
-- MP3SPI Version 1.9.1 (mp3spi1.9.1.jar) ([
+- MP3SPI Version 1.9.1 (mp3spi1.9.1.jar) ([source](http://www.javazoom.net/mp3spi/sources.html))
+- JLayer Version 0.4 (jl0.4.jar) ([source](http://www.javazoom.net/javalayer/sources.html))
+- Tr
